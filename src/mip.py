@@ -1,11 +1,17 @@
+import networkx as nx
+import gurobipy as gp
+from gurobipy import GRB
+import math
+import os
+
+VALID_CONTIGUITY = {None, "tree", "dist", "dag", "shir", "cut", "lcut"}
+VALID_OBJECTIVES = {
+    None, "cut_edges", "shared_perim", "perim", 
+    "inverse_polsby_popper", "hop_moi", "weighted_moi", "euclidean_moi"
+}
+
 class DistrictingModel:
     """Base class for districting optimization models."""
-    
-    VALID_CONTIGUITY = {None, "tree", "dist", "dag", "shir", "cut", "lcut"}
-    VALID_OBJECTIVES = {
-        None, "cut_edges", "shared_perim", "perim", 
-        "inverse_polsby_popper", "hop_moi", "weighted_moi", "euclidean_moi"
-    }
     
     def __init__(self, G, k, deviation_persons, roots, contiguity=None, 
                  objective=None, use_weighted_distances=False, 
