@@ -1,21 +1,51 @@
+"""
+MIP for solving Single and Multi-distriting problems with various contiguity and objective options.
+
+Authors: Ishaan Jolly and Austin Buchanan
+"""
+
 import networkx as nx
 import gurobipy as gp
 from gurobipy import GRB
 import math
 import os
+from utils import euclidean_distance
+from mip_utils import (
+    single_district_cut_callback,
+    multi_district_cut_callback,
+)
 
 VALID_CONTIGUITY = {None, "tree", "dist", "dag", "shir", "cut", "lcut"}
 VALID_OBJECTIVES = {
-    None, "cut_edges", "shared_perim", "perim", 
-    "inverse_polsby_popper", "hop_moi", "weighted_moi", "euclidean_moi"
+    None,
+    "cut_edges",
+    "shared_perim",
+    "perim",
+    "inverse_polsby_popper",
+    "hop_moi",
+    "weighted_moi",
+    "euclidean_moi",
 }
+
 
 class DistrictingModel:
     """Base class for districting optimization models."""
-    
-    def __init__(self, G, k, deviation_persons, roots, contiguity=None, 
-                 objective=None, use_weighted_distances=False, 
-                 ideal_population=None, verbose=True):
+
+    VALID_CONTIGUITY = VALID_CONTIGUITY
+    VALID_OBJECTIVES = VALID_OBJECTIVES
+
+    def __init__(
+        self,
+        G,
+        k,
+        deviation_persons,
+        roots,
+        contiguity=None,
+        objective=None,
+        use_weighted_distances=False,
+        ideal_population=None,
+        verbose=True,
+    ):
         self.G = G
         self.DG = nx.DiGraph(G)
         self.k = k
@@ -25,21 +55,28 @@ class DistrictingModel:
         self.objective = objective
         self.use_weighted_distances = use_weighted_distances
         self.verbose = verbose
-        
+
         # Calculate population bounds
         if ideal_population is None:
-            ideal_population = sum(self.DG.nodes[i]["TOTPOP"] for i in self.DG.nodes) / k
+            ideal_population = (
+                sum(self.DG.nodes[i]["TOTPOP"] for i in self.DG.nodes) / k
+            )
         self.DG._L = math.ceil(ideal_population - deviation_persons)
         self.DG._U = math.floor(ideal_population + deviation_persons)
-        
+
+        if self.verbose:
+            print("Using L, U, k =", self.DG._L, self.DG._U, k)
+
         # Initialize model
         self.model = gp.Model()
+        self.model.Params.OutputFlag = 1
+        self.model.Params.LogToConsole = 1
         self.model._numCallbacks = 0
         self.model._numLazyCuts = 0
-        
-        # Validate inputs
+        self.model._callback = None
+
         self._validate()
-    
+
     def _validate(self):
         """Validate all inputs."""
         if not all(root in self.DG.nodes for root in self.roots):
@@ -48,47 +85,73 @@ class DistrictingModel:
             raise ValueError(f"Invalid contiguity: {self.contiguity}")
         if self.objective not in self.VALID_OBJECTIVES:
             raise ValueError(f"Invalid objective: {self.objective}")
-    
+
     def _create_variables(self):
         """Create decision variables. Override in subclasses."""
         raise NotImplementedError
-    
+
     def _add_population_constraints(self):
         """Add population balance constraints. Override in subclasses."""
         raise NotImplementedError
-    
+
     def _add_assignment_constraints(self):
         """Add assignment constraints. Override in subclasses."""
         raise NotImplementedError
-    
+
+    def _add_cut_edge_constraints(self, pool_search=0):
+        """Add y[u,v] cut-edge constraints when needed by the objective."""
+        raise NotImplementedError
+
     def _setup_objective(self):
-        """Setup objective function."""
+        """Dispatch to the appropriate objective setup."""
         if self.objective in {"hop_moi", "weighted_moi", "euclidean_moi"}:
             self._setup_moi_objective()
         elif self.objective == "cut_edges":
-            self.model.setObjective(gp.quicksum(self.model._y), GRB.MINIMIZE)
+            self._setup_cut_edges_objective()
         elif self.objective == "shared_perim":
             self._setup_shared_perim_objective()
+        elif self.objective == "perim":
+            self._setup_perim_objective()
         elif self.objective == "inverse_polsby_popper":
             self._setup_polsby_popper_objective()
-    
+
     def _setup_moi_objective(self):
-        """Setup Moment of Inertia objectives."""
+        """Setup Moment of Inertia objectives. Override in subclasses."""
         raise NotImplementedError
-    
+
+    def _setup_cut_edges_objective(self):
+        """Minimize number of cut edges."""
+        raise NotImplementedError
+
+    def _setup_shared_perim_objective(self):
+        """Minimize shared perimeter of cut edges."""
+        raise NotImplementedError
+
+    def _setup_perim_objective(self):
+        """Minimize total perimeter (shared + boundary)."""
+        raise NotImplementedError
+
+    def _setup_polsby_popper_objective(self):
+        """Minimize inverse Polsby-Popper compactness score."""
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Contiguity
+    # ------------------------------------------------------------------
+
     def _get_predecessors(self, root):
-        """Get predecessors using BFS or Dijkstra."""
+        """Get BFS or Dijkstra predecessors and distances from root."""
         if self.use_weighted_distances:
             pred, dist = nx.dijkstra_predecessor_and_distance(
-                self.DG, source=root, weight='weight'
+                self.DG, source=root, weight="weight"
             )
         else:
             pred = nx.predecessor(self.DG, source=root)
             dist = nx.single_source_shortest_path_length(self.DG, source=root)
         return pred, dist
-    
+
     def _add_contiguity_constraints(self):
-        """Add contiguity constraints."""
+        """Dispatch to the appropriate contiguity method."""
         if self.contiguity == "tree":
             self._add_tree_contiguity()
         elif self.contiguity == "dist":
@@ -99,73 +162,71 @@ class DistrictingModel:
             self._add_shirabe_contiguity()
         elif self.contiguity in {"cut", "lcut"}:
             self._add_cut_contiguity()
-    
+
     def _add_tree_contiguity(self):
-        """Add tree-based contiguity constraints."""
         raise NotImplementedError
-    
+
     def _add_dist_contiguity(self):
-        """Add distance-based contiguity constraints."""
         raise NotImplementedError
-    
+
     def _add_dag_contiguity(self):
-        """Add DAG-based contiguity constraints."""
         raise NotImplementedError
-    
+
     def _add_shirabe_contiguity(self):
-        """Add Shirabe flow-based contiguity constraints."""
         raise NotImplementedError
-    
+
     def _add_cut_contiguity(self):
-        """Add cut-based contiguity with callbacks."""
+        """Shared cut-contiguity setup (enables lazy constraints)."""
         self.model.Params.LazyConstraints = 1
         self.model._DG = self.DG
         self.model._contiguity = self.contiguity
-    
-    def build(self):
-        """Build the complete model."""
+
+    def build(self, pool_search=0):
+        """Assemble the full MIP model."""
         self._create_variables()
         self._add_assignment_constraints()
         self._add_population_constraints()
+        self._add_cut_edge_constraints(pool_search=pool_search)
         self._setup_objective()
         self._add_contiguity_constraints()
-        return self
-    
-    def solve(self, time_limit=3600, pool_search=0, pool_size=1, 
-              cutoff=None, log_file=None, model_file=None):
-        """Solve the model."""
+        self.model.update()
+
+    def solve(
+        self,
+        time_limit=3600,
+        pool_search=0,
+        pool_size=1,
+        cutoff=None,
+        log_file=None,
+        model_file=None,
+    ):
+        """Solve the model and return a metrics dictionary."""
         os.makedirs("logs", exist_ok=True)
         os.makedirs("models", exist_ok=True)
-        
-        # Set parameters
-        self.model.Params.MIPGap = 0.00
-        self.model.Params.FeasibilityTol = 1e-7
-        self.model.Params.IntFeasTol = 1e-7
+
+        self.model.Params.MIPGap = 0.00  ## DEFAULT VALUE
         self.model.Params.PoolSearchMode = pool_search
         self.model.Params.PoolSolutions = pool_size
         self.model.Params.TimeLimit = time_limit
-        self.model.Params.OutputFlag = 1
-        self.model.Params.LogToConsole = 1
-        
+
         if cutoff is not None:
             self.model.Params.Cutoff = cutoff
         if log_file is not None:
             self.model.Params.LogFile = log_file
         if model_file is not None:
             self.model.write(model_file)
-        
+
         self.model.update()
-        
-        # Optimize
-        if hasattr(self.model, '_callback') and self.model._callback:
+
+        if self.model._callback is not None:
             self.model.optimize(self.model._callback)
         else:
             self.model.optimize()
-        
+
         return self._build_metrics()
-    
+
     def _build_metrics(self):
-        """Build metrics dictionary from solved model."""
+        """Build the metrics dictionary from the solved model."""
         status_map = {
             GRB.OPTIMAL: "Optimal",
             GRB.INFEASIBLE: "Infeasible",
@@ -177,18 +238,30 @@ class DistrictingModel:
             GRB.SOLUTION_LIMIT: "Solution Limit",
             GRB.INTERRUPTED: "Interrupted",
         }
-        
+
+        obj_val = None
+        if self.model.SolCount > 0:
+            try:
+                obj_val = self.model.ObjVal
+            except Exception:
+                pass
+
         return {
             "time_best": self.model.Runtime,
             "objective_type": self.objective,
-            "objective": self.model.ObjVal if self.model.SolCount > 0 else None,
+            "objective": obj_val,
             "obj_bound": self.model.ObjBound,
             "obj_gap": self.model.MIPGap if self.model.SolCount > 0 else None,
             "nonzeros": self.model.NumNZs,
             "num_solutions": self.model.SolCount,
-            "status": status_map.get(self.model.Status, f"Unknown ({self.model.Status})"),
+            "status": status_map.get(
+                self.model.Status, f"Unknown ({self.model.Status})"
+            ),
             "contiguity": self.contiguity,
-            "sparsity": (1 - (self.model.NumNZs / (self.model.NumConstrs * self.model.NumVars))) * 100,
+            "sparsity": (
+                1 - (self.model.NumNZs / (self.model.NumConstrs * self.model.NumVars))
+            )
+            * 100,
             "num_callbacks": self.model._numCallbacks,
             "num_lazy_cuts": self.model._numLazyCuts,
         }
@@ -196,195 +269,502 @@ class DistrictingModel:
 
 class SingleDistrictModel(DistrictingModel):
     """Model for finding a single optimal district."""
-    
+
     def __init__(self, G, k, deviation_persons, root=None, **kwargs):
-        # Auto-select root if not provided
         if root is None:
             maxp = max(G.nodes[i]["TOTPOP"] for i in G.nodes)
             root = [i for i in G.nodes if G.nodes[i]["TOTPOP"] == maxp][0]
-        
         super().__init__(G, k, deviation_persons, roots=[root], **kwargs)
         self.root = self.roots[0]
-    
+
     def _create_variables(self):
-        """Create x[i] binary variables."""
         self.model._x = self.model.addVars(self.DG.nodes, name="x", vtype=GRB.BINARY)
-        self.model._x[self.root].LB = 1  # Root must be selected
-        
-        # Create y variables for objectives that need them
+        self.model._x[self.root].LB = 1
+
         if self.objective not in {None, "hop_moi", "weighted_moi", "euclidean_moi"}:
-            self.model._y = self.model.addVars(self.DG.edges, name="y", vtype=GRB.BINARY)
-    
+            self.model._y = self.model.addVars(
+                self.DG.edges, name="y", vtype=GRB.BINARY
+            )
+
     def _add_assignment_constraints(self):
-        """No assignment constraints for single district."""
-        pass
-    
+        pass  # no assignment constraints for a single district
+
     def _add_population_constraints(self):
-        """Add L <= population <= U constraints."""
         if self.deviation_persons is not None:
             self.model.addConstr(
-                gp.quicksum(self.DG.nodes[i]["TOTPOP"] * self.model._x[i] 
-                           for i in self.DG.nodes) >= self.DG._L
+                gp.quicksum(
+                    self.DG.nodes[i]["TOTPOP"] * self.model._x[i] for i in self.DG.nodes
+                )
+                >= self.DG._L
             )
             self.model.addConstr(
-                gp.quicksum(self.DG.nodes[i]["TOTPOP"] * self.model._x[i] 
-                           for i in self.DG.nodes) <= self.DG._U
+                gp.quicksum(
+                    self.DG.nodes[i]["TOTPOP"] * self.model._x[i] for i in self.DG.nodes
+                )
+                <= self.DG._U
             )
-    
+
+    def _add_cut_edge_constraints(self, pool_search=0):
+        if self.objective in {None, "hop_moi", "weighted_moi", "euclidean_moi"}:
+            return
+        self.model.addConstrs(
+            self.model._x[u] - self.model._x[v] <= self.model._y[u, v]
+            for u, v in self.DG.edges
+        )
+        if pool_search > 0:
+            self.model.addConstrs(
+                self.model._y[u, v] <= self.model._x[u] for u, v in self.DG.edges
+            )
+            self.model.addConstrs(
+                self.model._x[v] + self.model._y[u, v] <= 1 for u, v in self.DG.edges
+            )
+
     def _setup_moi_objective(self):
-        """Setup MOI objectives for single district."""
         if self.objective == "hop_moi":
             dist = nx.single_source_shortest_path_length(self.DG, source=self.root)
+            self.model.setObjective(
+                gp.quicksum(
+                    dist[i] ** 2 * self.G.nodes[i]["TOTPOP"] * self.model._x[i]
+                    for i in self.G.nodes
+                ),
+                GRB.MINIMIZE,
+            )
         elif self.objective == "weighted_moi":
-            dist = nx.single_source_dijkstra_path_length(self.DG, source=self.root, weight='weight')
+            dist = nx.single_source_dijkstra_path_length(
+                self.DG, source=self.root, weight="weight"
+            )
+            self.model.setObjective(
+                gp.quicksum(
+                    dist[i] ** 2 * self.G.nodes[i]["TOTPOP"] * self.model._x[i]
+                    for i in self.G.nodes
+                ),
+                GRB.MINIMIZE,
+            )
         elif self.objective == "euclidean_moi":
             self.model.setObjective(
-                gp.quicksum(sq_eucl_dist(self.G, i, self.root) * self.G.nodes[i]["TOTPOP"] * self.model._x[i] 
-                           for i in self.G.nodes),
-                GRB.MINIMIZE
+                gp.quicksum(
+                    euclidean_distance(self.G, i, self.root) ** 2
+                    * self.G.nodes[i]["TOTPOP"]
+                    * self.model._x[i]
+                    for i in self.G.nodes
+                ),
+                GRB.MINIMIZE,
             )
-            return
-        
+
+    def _setup_cut_edges_objective(self):
+        self.model.setObjective(gp.quicksum(self.model._y), GRB.MINIMIZE)
+
+    def _setup_shared_perim_objective(self):
         self.model.setObjective(
-            gp.quicksum(dist[i]**2 * self.G.nodes[i]["TOTPOP"] * self.model._x[i] 
-                       for i in self.G.nodes),
-            GRB.MINIMIZE
+            gp.quicksum(
+                self.DG.edges[u, v]["shared_perim"] * self.model._y[u, v]
+                for u, v in self.DG.edges
+            ),
+            GRB.MINIMIZE,
         )
-    
+
+    def _setup_perim_objective(self):
+        self.model.setObjective(
+            gp.quicksum(
+                self.DG.edges[u, v]["shared_perim"] * self.model._y[u, v]
+                for u, v in self.DG.edges
+            )
+            + gp.quicksum(
+                self.DG.nodes[i]["boundary_perim"] * self.model._x[i]
+                for i in self.DG.nodes
+                if self.DG.nodes[i]["boundary_node"]
+            ),
+            GRB.MINIMIZE,
+        )
+
+    def _setup_polsby_popper_objective(self):
+        m = self.model
+        m._z = m.addVar(name="z")
+        m._A = m.addVar(name="A")
+        m._P = m.addVar(name="P")
+        m.setObjective(m._z, GRB.MINIMIZE)
+        m.addConstr(m._P * m._P <= 4 * math.pi * m._A * m._z)
+        m.addConstr(
+            m._A
+            == gp.quicksum(self.DG.nodes[i]["area"] * m._x[i] for i in self.DG.nodes)
+        )
+        m.addConstr(
+            m._P
+            == gp.quicksum(
+                self.DG.edges[u, v]["shared_perim"] * m._y[u, v]
+                for u, v in self.DG.edges
+            )
+            + gp.quicksum(
+                self.DG.nodes[i]["boundary_perim"] * m._x[i]
+                for i in self.DG.nodes
+                if self.DG.nodes[i]["boundary_node"]
+            )
+        )
+
     def _add_tree_contiguity(self):
-        """Tree contiguity for single district."""
         pred, _ = self._get_predecessors(self.root)
         self.model.addConstrs(
-            self.model._x[i] <= self.model._x[pred[i][0]] 
-            for i in pred if i != self.root
+            self.model._x[i] <= self.model._x[pred[i][0]]
+            for i in pred
+            if i != self.root
         )
-    
+
+    def _add_dist_contiguity(self):
+        pred, _ = self._get_predecessors(self.root)
+        self.model.addConstrs(
+            self.model._x[i] <= gp.quicksum(self.model._x[t] for t in pred[i])
+            for i in self.DG.nodes
+            if i != self.root
+        )
+
+    def _add_dag_contiguity(self):
+        if self.use_weighted_distances:
+            dist = nx.single_source_dijkstra_path_length(
+                self.DG, source=self.root, weight="weight"
+            )
+        else:
+            dist = nx.single_source_shortest_path_length(self.DG, source=self.root)
+        ordering = sorted(dist.items(), key=lambda item: item[1])
+        position = {ordering[p][0]: p for p in range(len(ordering))}
+        self.model.addConstrs(
+            self.model._x[i]
+            <= gp.quicksum(
+                self.model._x[t]
+                for t in self.DG.neighbors(i)
+                if position[t] < position[i]
+            )
+            for i in self.DG.nodes
+            if i != self.root
+        )
+
+    def _add_shirabe_contiguity(self):
+        m = self.model
+        m._f = m.addVars(self.DG.edges, name="f")
+        M = self.DG.number_of_nodes() - 1
+        m.addConstrs(
+            gp.quicksum(m._f[j, i] - m._f[i, j] for j in self.DG.neighbors(i))
+            == m._x[i]
+            for i in self.DG.nodes
+            if i != self.root
+        )
+        m.addConstrs(
+            gp.quicksum(m._f[j, i] for j in self.DG.neighbors(i)) <= M * m._x[i]
+            for i in self.DG.nodes
+            if i != self.root
+        )
+
+    def _add_cut_contiguity(self):
+        super()._add_cut_contiguity()
+        self.model._root = self.root
+        self.model._callback = single_district_cut_callback
+
+    # --- metrics ---
+
     def _build_metrics(self):
-        """Add district solution to metrics."""
         metrics = super()._build_metrics()
         if self.model.SolCount > 0:
-            metrics["district"] = [i for i in self.G.nodes if self.model._x[i].x > 0.5]
+            try:
+                metrics["district"] = [
+                    i for i in self.G.nodes if self.model._x[i].x > 0.5
+                ]
+            except Exception:
+                metrics["district"] = None
         else:
             metrics["district"] = None
         return metrics
 
 
 class MultiDistrictModel(DistrictingModel):
-    """Model for finding k optimal districts."""
-    
-    VALID_OBJECTIVES = DistrictingModel.VALID_OBJECTIVES | {"bottleneck_polsby_popper"}
-    
+    """Model for finding k optimal districts simultaneously."""
+
+    VALID_OBJECTIVES = VALID_OBJECTIVES | {"bottleneck_polsby_popper"}
+
     def __init__(self, G, k, deviation_persons, roots, **kwargs):
         if len(roots) != k:
             raise ValueError(f"Number of roots must equal k={k}")
         super().__init__(G, k, deviation_persons, roots, **kwargs)
-    
+
     def _create_variables(self):
-        """Create x[i,j] binary variables."""
         self.model._x = {}
         for node in self.DG.nodes():
             for j in range(self.k):
                 self.model._x[node, j] = self.model.addVar(
                     vtype=GRB.BINARY, name=f"x_{node}_{j}"
                 )
-        
-        # Fix roots
         for j in range(self.k):
             self.model._x[self.roots[j], j].LB = 1
-        
-        # Create y variables for objectives that need them
-        if self.objective in {"shared_perim", "perim", "inverse_polsby_popper", 
-                              "cut_edges", "bottleneck_polsby_popper"}:
-            self.model._y = self.model.addVars(self.DG.edges, self.k, name="y", vtype=GRB.BINARY)
-        
+
+        if self.objective in {
+            "shared_perim",
+            "perim",
+            "inverse_polsby_popper",
+            "cut_edges",
+            "bottleneck_polsby_popper",
+        }:
+            self.model._y = self.model.addVars(
+                self.DG.edges, self.k, name="y", vtype=GRB.BINARY
+            )
+
         self.model.update()
-    
+
     def _add_assignment_constraints(self):
-        """Each node assigned to exactly one district."""
         self.model.addConstrs(
-            gp.quicksum(self.model._x[i, j] for j in range(self.k)) == 1 
+            gp.quicksum(self.model._x[i, j] for j in range(self.k)) == 1
             for i in self.DG.nodes
         )
-    
+
     def _add_population_constraints(self):
-        """Add L <= population <= U for each district."""
         for j in range(self.k):
             self.model.addConstr(
-                gp.quicksum(self.DG.nodes[i]["TOTPOP"] * self.model._x[i, j] 
-                           for i in self.DG.nodes) >= self.DG._L
+                gp.quicksum(
+                    self.DG.nodes[i]["TOTPOP"] * self.model._x[i, j]
+                    for i in self.DG.nodes
+                )
+                >= self.DG._L
             )
             self.model.addConstr(
-                gp.quicksum(self.DG.nodes[i]["TOTPOP"] * self.model._x[i, j] 
-                           for i in self.DG.nodes) <= self.DG._U
+                gp.quicksum(
+                    self.DG.nodes[i]["TOTPOP"] * self.model._x[i, j]
+                    for i in self.DG.nodes
+                )
+                <= self.DG._U
             )
-    
+
+    def _add_cut_edge_constraints(self, pool_search=0):
+        if self.objective not in {
+            "shared_perim",
+            "perim",
+            "inverse_polsby_popper",
+            "cut_edges",
+            "bottleneck_polsby_popper",
+        }:
+            return
+
+        m = self.model
+        m.addConstrs(
+            m._x[u, j] - m._x[v, j] <= m._y[u, v, j]
+            for u, v in self.DG.edges
+            for j in range(self.k)
+        )
+
+        # is_cut[u,v] = 1 iff edge {u,v} is cut by any district boundary
+        undirected_edges = [(u, v) for u, v in self.DG.edges if u < v]
+        m._is_cut = m.addVars(undirected_edges, vtype=GRB.BINARY)
+        m.addConstrs(
+            m._is_cut[u, v] == gp.quicksum(m._y[u, v, j] for j in range(self.k))
+            for u, v in undirected_edges
+        )
+        m.addConstrs(
+            m._is_cut[u, v] == gp.quicksum(m._y[v, u, j] for j in range(self.k))
+            for u, v in undirected_edges
+        )
+        self._undirected_edges = undirected_edges
+
+        if pool_search > 0:
+            m.addConstrs(
+                m._y[u, v, j] <= m._x[u, j]
+                for u, v in self.DG.edges
+                for j in range(self.k)
+            )
+            m.addConstrs(
+                m._x[v, j] + m._y[u, v, j] <= 1
+                for u, v in self.DG.edges
+                for j in range(self.k)
+            )
+
     def _setup_moi_objective(self):
-        """Setup MOI objectives for multi-district."""
         for j in range(self.k):
             root = self.roots[j]
-            
             if self.objective == "hop_moi":
                 dist = nx.single_source_shortest_path_length(self.DG, source=root)
+                for i in self.DG.nodes:
+                    self.model._x[i, j].obj = dist[i] ** 2 * self.G.nodes[i]["TOTPOP"]
             elif self.objective == "weighted_moi":
-                dist = nx.single_source_dijkstra_path_length(self.DG, source=root, weight='weight')
+                dist = nx.single_source_dijkstra_path_length(
+                    self.DG, source=root, weight="weight"
+                )
+                for i in self.DG.nodes:
+                    self.model._x[i, j].obj = dist[i] ** 2 * self.G.nodes[i]["TOTPOP"]
             elif self.objective == "euclidean_moi":
                 for i in self.DG.nodes:
-                    self.model._x[i, j].obj = sq_eucl_dist(self.G, i, root) * self.G.nodes[i]["TOTPOP"]
-                continue
-            
-            for i in self.DG.nodes:
-                self.model._x[i, j].obj = dist[i]**2 * self.G.nodes[i]["TOTPOP"]
-    
+                    self.model._x[i, j].obj = (
+                        euclidean_distance(self.G, i, root) ** 2
+                        * self.G.nodes[i]["TOTPOP"]
+                    )
+
+    def _setup_cut_edges_objective(self):
+        self.model.setObjective(gp.quicksum(self.model._is_cut), GRB.MINIMIZE)
+
+    def _setup_shared_perim_objective(self):
+        self.model.setObjective(
+            gp.quicksum(
+                self.DG.edges[u, v]["shared_perim"] * self.model._is_cut[u, v]
+                for u, v in self._undirected_edges
+            ),
+            GRB.MINIMIZE,
+        )
+
+    def _setup_perim_objective(self):
+        self.model.setObjective(
+            gp.quicksum(
+                self.DG.edges[u, v]["shared_perim"] * self.model._y[u, v, j]
+                for u, v in self.DG.edges
+                for j in range(self.k)
+            )
+            + gp.quicksum(
+                self.DG.nodes[i]["boundary_perim"]
+                for i in self.DG.nodes
+                if self.DG.nodes[i]["boundary_node"]
+            ),
+            GRB.MINIMIZE,
+        )
+
+    def _setup_polsby_popper_objective(self):
+        m = self.model
+        m._z = m.addVars(self.k, name="z")
+        m._A = m.addVars(self.k, name="A")
+        m._P = m.addVars(self.k, name="P")
+
+        if self.objective == "inverse_polsby_popper":
+            m.setObjective((1 / self.k) * gp.quicksum(m._z), GRB.MINIMIZE)
+        elif self.objective == "bottleneck_polsby_popper":
+            m._worst_z = m.addVar(name="worst_z")
+            m.setObjective(m._worst_z, GRB.MINIMIZE)
+            m.addConstrs(m._z[j] <= m._worst_z for j in range(self.k))
+
+        m.addConstrs(
+            m._P[j] * m._P[j] <= 4 * math.pi * m._A[j] * m._z[j] for j in range(self.k)
+        )
+        m.addConstrs(
+            m._A[j]
+            == gp.quicksum(self.DG.nodes[i]["area"] * m._x[i, j] for i in self.DG.nodes)
+            for j in range(self.k)
+        )
+        m.addConstrs(
+            m._P[j]
+            == gp.quicksum(
+                self.DG.edges[u, v]["shared_perim"] * m._y[u, v, j]
+                for u, v in self.DG.edges
+            )
+            + gp.quicksum(
+                self.DG.nodes[i]["boundary_perim"] * m._x[i, j]
+                for i in self.DG.nodes
+                if self.DG.nodes[i]["boundary_node"]
+            )
+            for j in range(self.k)
+        )
+
     def _add_tree_contiguity(self):
-        """Tree contiguity for multi-district."""
         for j in range(self.k):
             root = self.roots[j]
             pred, _ = self._get_predecessors(root)
             self.model.addConstrs(
-                self.model._x[i, j] <= self.model._x[pred[i][0], j] 
-                for i in self.DG.nodes if i != root
+                self.model._x[i, j] <= self.model._x[pred[i][0], j]
+                for i in self.DG.nodes
+                if i != root
             )
-    
+
+    def _add_dist_contiguity(self):
+        for j in range(self.k):
+            root = self.roots[j]
+            pred, _ = self._get_predecessors(root)
+            self.model.addConstrs(
+                self.model._x[i, j] <= gp.quicksum(self.model._x[t, j] for t in pred[i])
+                for i in self.DG.nodes
+                if i != root
+            )
+
+    def _add_dag_contiguity(self):
+        for j in range(self.k):
+            root = self.roots[j]
+            if self.use_weighted_distances:
+                dist = nx.single_source_dijkstra_path_length(
+                    self.DG, source=root, weight="weight"
+                )
+            else:
+                dist = nx.single_source_shortest_path_length(self.DG, source=root)
+            ordering = sorted(dist.items(), key=lambda item: item[1])
+            position = {ordering[p][0]: p for p in range(len(ordering))}
+            self.model.addConstrs(
+                self.model._x[i, j]
+                <= gp.quicksum(
+                    self.model._x[t, j]
+                    for t in self.DG.neighbors(i)
+                    if position[t] < position[i]
+                )
+                for i in self.DG.nodes
+                if i != root
+            )
+
+    def _add_shirabe_contiguity(self):
+        m = self.model
+        m._f = m.addVars(self.DG.edges, self.k, name="f")
+        M = self.DG.number_of_nodes() - 1
+        for j in range(self.k):
+            root = self.roots[j]
+            m.addConstrs(
+                gp.quicksum(m._f[u, v, j] - m._f[v, u, j] for u in self.DG.neighbors(v))
+                == m._x[v, j]
+                for v in self.DG.nodes
+                if v != root
+            )
+            m.addConstrs(
+                gp.quicksum(m._f[u, v, j] for u in self.DG.neighbors(v))
+                <= M * m._x[v, j]
+                for v in self.DG.nodes
+                if v != root
+            )
+
+    def _add_cut_contiguity(self):
+        super()._add_cut_contiguity()
+        self.model._roots = self.roots
+        self.model._k = self.k
+        self.model._callback = multi_district_cut_callback
+
     def _build_metrics(self):
-        """Add districts solution to metrics."""
         metrics = super()._build_metrics()
         metrics["roots"] = self.roots
         if self.model.SolCount > 0:
-            metrics["districts"] = [
-                [i for i in self.G.nodes if self.model._x[i, j].x > 0.5] 
-                for j in range(self.k)
-            ]
+            try:
+                metrics["districts"] = [
+                    [i for i in self.G.nodes if self.model._x[i, j].x > 0.5]
+                    for j in range(self.k)
+                ]
+            except Exception:
+                metrics["districts"] = None
         else:
             metrics["districts"] = None
         return metrics
 
 
-# Updated function signatures
+## =============== CLASS WRAPPERS ==============
+
+
 def single_district_mip(G, k, deviation_persons, root=None, **kwargs):
-    """Build and solve single district model."""
+    """Build and solve a single-district MIP model."""
     model = SingleDistrictModel(G, k, deviation_persons, root, **kwargs)
-    model.build()
-    metrics, gurobi_model = model.solve(
-        time_limit=kwargs.get('time_limit', 3600),
-        pool_search=kwargs.get('pool_search', 0),
-        pool_size=kwargs.get('pool_size', 1),
-        cutoff=kwargs.get('cutoff'),
-        log_file=kwargs.get('log_file'),
-        model_file=kwargs.get('model_file')
-    ), model.model
-    return metrics, gurobi_model
+    model.build(pool_search=kwargs.get("pool_search", 0))
+    metrics = model.solve(
+        time_limit=kwargs.get("time_limit", 3600),
+        pool_search=kwargs.get("pool_search", 0),
+        pool_size=kwargs.get("pool_size", 1),
+        cutoff=kwargs.get("cutoff"),
+        log_file=kwargs.get("log_file"),
+        model_file=kwargs.get("model_file"),
+    )
+    return metrics, model.model
 
 
 def multi_district_mip(G, k, deviation_persons, roots, **kwargs):
-    """Build and solve multi-district model."""
+    """Build and solve a multi-district MIP model."""
     model = MultiDistrictModel(G, k, deviation_persons, roots, **kwargs)
-    model.build()
-    metrics, gurobi_model = model.solve(
-        time_limit=kwargs.get('time_limit', 3600),
-        pool_search=kwargs.get('pool_search', 0),
-        pool_size=kwargs.get('pool_size', 1),
-        cutoff=kwargs.get('cutoff'),
-        log_file=kwargs.get('log_file'),
-        model_file=kwargs.get('model_file')
-    ), model.model
-    return metrics, gurobi_model
+    model.build(pool_search=kwargs.get("pool_search", 0))
+    metrics = model.solve(
+        time_limit=kwargs.get("time_limit", 3600),
+        pool_search=kwargs.get("pool_search", 0),
+        pool_size=kwargs.get("pool_size", 1),
+        cutoff=kwargs.get("cutoff"),
+        log_file=kwargs.get("log_file"),
+        model_file=kwargs.get("model_file"),
+    )
+    return metrics, model.model
