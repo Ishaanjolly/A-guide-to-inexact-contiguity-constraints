@@ -9,8 +9,8 @@ import gurobipy as gp
 from gurobipy import GRB
 import math
 import os
-from utils import euclidean_distance
-from mip_utils import (
+from src.utils import euclidean_distance
+from src.mip_utils import (
     single_district_cut_callback,
     multi_district_cut_callback,
 )
@@ -85,6 +85,17 @@ class DistrictingModel:
             raise ValueError(f"Invalid contiguity: {self.contiguity}")
         if self.objective not in self.VALID_OBJECTIVES:
             raise ValueError(f"Invalid objective: {self.objective}")
+
+    def _validate_pool(self, pool_search, pool_size):
+        """Validate pool search parameters."""
+        if pool_search not in {0, 1, 2}:
+            raise ValueError("pool_search must be one of {0, 1, 2}")
+        if pool_size <= 0:
+            raise ValueError("pool_size must be greater than 0")
+        if pool_search > 0 and self.contiguity == "shir":
+            raise ValueError(
+                "Cannot use shirabe contiguity ('shir') when pool_search > 0"
+            )
 
     def _create_variables(self):
         """Create decision variables. Override in subclasses."""
@@ -181,8 +192,9 @@ class DistrictingModel:
         self.model._DG = self.DG
         self.model._contiguity = self.contiguity
 
-    def build(self, pool_search=0):
+    def build(self, pool_search=0, pool_size=1):
         """Assemble the full MIP model."""
+        self._validate_pool(pool_search, pool_size)
         self._create_variables()
         self._add_assignment_constraints()
         self._add_population_constraints()
@@ -204,7 +216,9 @@ class DistrictingModel:
         os.makedirs("logs", exist_ok=True)
         os.makedirs("models", exist_ok=True)
 
-        self.model.Params.MIPGap = 0.00  ## DEFAULT VALUE
+        self._validate_pool(pool_search, pool_size)
+
+        self.model.Params.MIPGap = 0.00  ## DEFAULT VALUE
         self.model.Params.PoolSearchMode = pool_search
         self.model.Params.PoolSolutions = pool_size
         self.model.Params.TimeLimit = time_limit
@@ -457,8 +471,6 @@ class SingleDistrictModel(DistrictingModel):
         super()._add_cut_contiguity()
         self.model._root = self.root
         self.model._callback = single_district_cut_callback
-
-    # --- metrics ---
 
     def _build_metrics(self):
         metrics = super()._build_metrics()
@@ -737,34 +749,86 @@ class MultiDistrictModel(DistrictingModel):
         return metrics
 
 
-## =============== CLASS WRAPPERS ==============
+## =============== CLASS WRAPPERS ==============
 
 
-def single_district_mip(G, k, deviation_persons, root=None, **kwargs):
+def single_district_mip(
+    G,
+    k,
+    deviation_persons,
+    root=None,
+    contiguity=None,
+    objective=None,
+    use_weighted_distances=False,
+    ideal_population=None,
+    verbose=True,
+    pool_search=0,
+    pool_size=1,
+    cutoff=None,
+    time_limit=3600,
+    log_file=None,
+    model_file=None,
+):
     """Build and solve a single-district MIP model."""
-    model = SingleDistrictModel(G, k, deviation_persons, root, **kwargs)
-    model.build(pool_search=kwargs.get("pool_search", 0))
+    model = SingleDistrictModel(
+        G,
+        k,
+        deviation_persons,
+        root,
+        contiguity=contiguity,
+        objective=objective,
+        use_weighted_distances=use_weighted_distances,
+        ideal_population=ideal_population,
+        verbose=verbose,
+    )
+    model.build(pool_search=pool_search, pool_size=pool_size)
     metrics = model.solve(
-        time_limit=kwargs.get("time_limit", 3600),
-        pool_search=kwargs.get("pool_search", 0),
-        pool_size=kwargs.get("pool_size", 1),
-        cutoff=kwargs.get("cutoff"),
-        log_file=kwargs.get("log_file"),
-        model_file=kwargs.get("model_file"),
+        time_limit=time_limit,
+        pool_search=pool_search,
+        pool_size=pool_size,
+        cutoff=cutoff,
+        log_file=log_file,
+        model_file=model_file,
     )
     return metrics, model.model
 
 
-def multi_district_mip(G, k, deviation_persons, roots, **kwargs):
+def multi_district_mip(
+    G,
+    k,
+    deviation_persons,
+    roots,
+    contiguity=None,
+    objective=None,
+    use_weighted_distances=False,
+    ideal_population=None,
+    verbose=True,
+    pool_search=0,
+    pool_size=1,
+    cutoff=None,
+    time_limit=3600,
+    log_file=None,
+    model_file=None,
+):
     """Build and solve a multi-district MIP model."""
-    model = MultiDistrictModel(G, k, deviation_persons, roots, **kwargs)
-    model.build(pool_search=kwargs.get("pool_search", 0))
+    model = MultiDistrictModel(
+        G,
+        k,
+        deviation_persons,
+        roots,
+        contiguity=contiguity,
+        objective=objective,
+        use_weighted_distances=use_weighted_distances,
+        ideal_population=ideal_population,
+        verbose=verbose,
+    )
+    model.build(pool_search=pool_search, pool_size=pool_size)
     metrics = model.solve(
-        time_limit=kwargs.get("time_limit", 3600),
-        pool_search=kwargs.get("pool_search", 0),
-        pool_size=kwargs.get("pool_size", 1),
-        cutoff=kwargs.get("cutoff"),
-        log_file=kwargs.get("log_file"),
-        model_file=kwargs.get("model_file"),
+        time_limit=time_limit,
+        pool_search=pool_search,
+        pool_size=pool_size,
+        cutoff=cutoff,
+        log_file=log_file,
+        model_file=model_file,
     )
     return metrics, model.model
