@@ -1,0 +1,23 @@
+[project]
+name = "contiguity-constraints"
+version = "0.1.0"
+description = "Code for the paper: A Guide to Inexact Contiguity Constraints by Austin Buchanan and Ishaan Jolly"
+authors = [
+    {name = "Ishaan Jolly and Austin Buchanan"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "geopandas==1.1.2",
+    "gurobipy==9.5.1",
+    "matplotlib==3.5.1",
+    "networkx==2.7.1",
+    "numpy==1.23.5",
+    "pandas==1.4.2",
+    "pyproj==3.7.2",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
