@@ -6,89 +6,10 @@ sweep over deviations × contiguity × objective grids, saving results
 incrementally to CSV after each run.
 """
 
-import time
 import pandas as pd
 
-from src.mip import single_district_mip, multi_district_mip
+from src.mip import multi_district_mip
 from src.utils import get_roots, set_euclidean_weights
-
-
-def run_single_enumeration(
-    G, deviation, contiguity, root, k, pool_size, time_limit, use_weighted=False
-):
-    """
-    Run a single enumeration solve and return a results dict.
-
-    Parameters
-    ----------
-    G : networkx.Graph
-    deviation : int
-        Population deviation in persons.
-    contiguity : str
-        One of 'tree', 'dist', 'dag', 'cut', 'lcut'.
-    root : int or list
-        Root node ID(s).
-    k : int
-        Number of districts.
-    pool_size : int
-        Maximum solutions to enumerate (Gurobi PoolSolutions).
-    time_limit : float
-        Time limit in seconds.
-    use_weighted : bool
-        Whether to pass use_weighted_distances=True to the MIP.
-
-    Returns
-    -------
-    dict
-        Keys: num_plans, solve_time, num_callbacks, num_lazy_cuts, status,
-        and optionally error_message.
-    """
-    start_time = time.time()
-
-    try:
-        metrics, model = single_district_mip(
-            G=G,
-            k=k,
-            deviation_persons=deviation,
-            root=root,
-            contiguity=contiguity,
-            objective=None,
-            verbose=False,
-            pool_search=2,
-            pool_size=pool_size,
-            time_limit=time_limit,
-            use_weighted_distances=use_weighted,
-        )
-
-        num_unique = model.SolCount
-        solve_time = time.time() - start_time
-
-        print(
-            f"  Found {num_unique} plans | time: {solve_time:.1f}s | "
-            f"callbacks: {metrics['num_callbacks']} | "
-            f"lazy cuts: {metrics['num_lazy_cuts']}"
-        )
-
-        return {
-            "num_plans": num_unique,
-            "solve_time": solve_time,
-            "num_callbacks": metrics["num_callbacks"],
-            "num_lazy_cuts": metrics["num_lazy_cuts"],
-            "status": metrics["status"],
-        }
-
-    except Exception as e:
-        solve_time = time.time() - start_time
-        print(f"  ERROR: {e}")
-
-        return {
-            "num_plans": 0,
-            "solve_time": solve_time,
-            "num_callbacks": 0,
-            "num_lazy_cuts": 0,
-            "status": "ERROR",
-            "error_message": str(e),
-        }
 
 
 def run_enumeration_experiment(
@@ -137,7 +58,7 @@ def run_enumeration_experiment(
     G = G_base.copy()
     if distance_metric == "euclidean":
         print("Setting Euclidean edge weights...")
-        set_euclidean_weights(G)
+        set_euclidean_weights(G)  # ensure this function is defined
 
     # Distance-dependent contiguity types use weighted distances
     distance_dependent = {"tree", "dist", "dag"}
@@ -167,18 +88,19 @@ def run_enumeration_experiment(
             f"contiguity={contiguity} | distance={metric_label}"
         )
 
-        result = run_single_enumeration(
+        metrics, _ = multi_district_mip(
             G=G,
-            deviation=deviation,
+            deviation_persons=deviation,
             contiguity=contiguity,
-            root=root,
+            roots=root,
             k=k,
+            pool_search=2,  # set default for enumeration
             pool_size=pool_size,
             time_limit=time_limit,
-            use_weighted=use_weighted,
+            use_weighted_distances=use_weighted,
         )
 
-        result.update(
+        metrics.update(
             {
                 "deviation": deviation,
                 "contiguity": contiguity,
@@ -186,104 +108,12 @@ def run_enumeration_experiment(
                 "roots": root,
             }
         )
-        results.append(result)
+        results.append(metrics)
 
         pd.DataFrame(results).to_csv(results_file, index=False)
         print(f"  Saved to {results_file}")
 
     return pd.DataFrame(results)
-
-
-# ---------------------------------------------------------------------------
-# Optimization helpers
-# ---------------------------------------------------------------------------
-
-
-def run_single_optimization(
-    G,
-    deviation,
-    contiguity,
-    objective,
-    roots,
-    k,
-    time_limit,
-    use_weighted_distances=False,
-):
-    """
-    Run a single optimization solve and return a results dict.
-
-    Parameters
-    ----------
-    G : networkx.Graph
-    deviation : int
-        Population deviation in persons.
-    contiguity : str
-        One of 'tree', 'dist', 'dag', 'cut', 'lcut'.
-    objective : str
-        Objective name, e.g. 'hop_moi', 'cut_edges', 'inverse_polsby_popper'.
-    roots : list of int
-        Root node IDs (one per district).
-    k : int
-        Number of districts.
-    time_limit : float
-        Time limit in seconds.
-    use_weighted_distances : bool
-        Whether to pass use_weighted_distances=True to the MIP.
-
-    Returns
-    -------
-    dict
-        Keys: objective_value, solve_time, num_solutions, num_callbacks,
-        num_lazy_cuts, status, gap, and optionally error_message.
-    """
-    start_time = time.time()
-
-    try:
-        metrics, model = multi_district_mip(
-            G=G,
-            k=k,
-            deviation_persons=deviation,
-            roots=roots,
-            contiguity=contiguity,
-            objective=objective,
-            verbose=False,
-            time_limit=time_limit,
-            use_weighted_distances=use_weighted_distances,
-        )
-
-        solve_time = time.time() - start_time
-        obj_val = model.ObjVal if model.SolCount > 0 else None
-        gap = model.MIPGap if model.SolCount > 0 else None
-
-        print(
-            f"  Status: {metrics['status']} | obj: {obj_val} | "
-            f"time: {solve_time:.1f}s"
-        )
-
-        return {
-            "objective_value": obj_val,
-            "solve_time": solve_time,
-            "num_solutions": model.SolCount,
-            "num_callbacks": metrics["num_callbacks"],
-            "num_lazy_cuts": metrics["num_lazy_cuts"],
-            "status": metrics["status"],
-            "gap": gap,
-        }
-
-    except Exception as e:
-        solve_time = time.time() - start_time
-        print(f"  ERROR: {e}")
-
-        return {
-            "objective_value": None,
-            "solve_time": solve_time,
-            "num_solutions": 0,
-            "num_callbacks": 0,
-            "num_lazy_cuts": 0,
-            "status": "ERROR",
-            "gap": None,
-            "error_message": str(e),
-        }
 
 
 def run_optimization_experiment(
@@ -371,9 +201,9 @@ def run_optimization_experiment(
             f"objective={exp['objective']}"
         )
 
-        result = run_single_optimization(
+        metrics, _ = multi_district_mip(
             G=G,
-            deviation=exp["deviation"],
+            deviation_persons=exp["deviation"],
             contiguity=exp["contiguity"],
             objective=exp["objective"],
             roots=roots,
@@ -382,7 +212,7 @@ def run_optimization_experiment(
             use_weighted_distances=exp["use_weighted"],
         )
 
-        result.update(
+        metrics.update(
             {
                 "deviation": exp["deviation"],
                 "contiguity": exp["contiguity"],
@@ -393,9 +223,9 @@ def run_optimization_experiment(
             }
         )
 
-        results.append(result)
+        results.append(metrics)
 
         pd.DataFrame(results).to_csv(results_file, index=False)
-        print(f"  Saved to {results_file}")
+        print(f" Saved to {results_file}")
 
     return pd.DataFrame(results)
