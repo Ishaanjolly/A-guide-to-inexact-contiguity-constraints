@@ -1,7 +1,7 @@
 import json
 from networkx.readwrite import json_graph
 from pyproj import Proj
-from params import BaseParams
+from src.params import BaseParams
 
 
 def read_graph_from_json(
