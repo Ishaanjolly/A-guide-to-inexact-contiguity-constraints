@@ -1,0 +1,8 @@
+time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,roots,districts,deviation,contiguity_distance,k,distance_metric
+0.30350208282470703,hop_moi,hop_moi,inf,,1972,0,Infeasible,dist,99.00204449302646,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
+0.27788305282592773,weighted_moi,weighted_moi,inf,,1972,0,Infeasible,dist,99.00204449302646,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
+0.2619659900665283,euclidean_moi,euclidean_moi,inf,,1972,0,Infeasible,dist,99.00204449302646,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
+0.6206238269805908,cut_edges,cut_edges,inf,,9520,0,Infeasible,dist,99.8537474002525,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
+0.6780190467834473,shared_perim,shared_perim,inf,,9520,0,Infeasible,dist,99.8537474002525,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
+0.6758999824523926,perim,perim,inf,,9520,0,Infeasible,dist,99.8537474002525,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
+3.2983219623565674,inverse_polsby_popper,inverse_polsby_popper,inf,,11844,0,Infeasible,dist,99.81948319520232,0,0,"[56, 26, 40, 27]",,10,euclidean,4,euclidean
