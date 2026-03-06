@@ -20,11 +20,11 @@ def draw_district(filepath, filename, G, district, state=None, level=None, zoom=
         zoom: If True, unselected nodes are set to None instead of False,
             enabling zoom-friendly rendering. Defaults to False.
     """
-    if filepath + filename is None: 
+    if filepath + filename is None:
         raise ValueError("Filepath and filename must be provided to draw district.")
 
     df = gpd.read_file(filepath + filename)
-    
+
     node_with_this_geoid = {G.nodes[i]["GEOID20"]: i for i in G.nodes}
     assignment = [-1 for i in G.nodes]
 
@@ -103,7 +103,7 @@ def visualize_roots(G, roots, title="Root Node Locations", figsize=(12, 10)):
 
     xs = [G.nodes[i]["X"] for i in G.nodes]
     ys = [G.nodes[i]["Y"] for i in G.nodes]
-    ax.scatter(xs, ys, c="lightblue", s=10, zorder=1)
+    ax.scatter(xs, ys, c="blue", s=50, zorder=1)
 
     root_xs = [G.nodes[r]["X"] for r in roots]
     root_ys = [G.nodes[r]["Y"] for r in roots]
@@ -143,11 +143,11 @@ def visualize_roots_with_districts(
         xs = np.array([G.nodes[i]["X"] for i in G.nodes])
         ys = np.array([G.nodes[i]["Y"] for i in G.nodes])
         colors = np.array([labeling.get(i, -1) for i in G.nodes])
-        ax.scatter(xs, ys, c=colors, cmap=cmap, s=10, zorder=1)
+        ax.scatter(xs, ys, c=colors, cmap=cmap, s=50, zorder=1)
     else:
         xs = [G.nodes[i]["X"] for i in G.nodes]
         ys = [G.nodes[i]["Y"] for i in G.nodes]
-        ax.scatter(xs, ys, c="lightblue", s=10, zorder=1)
+        ax.scatter(xs, ys, c="blue", s=50, zorder=1)
 
     root_xs = [G.nodes[r]["X"] for r in roots]
     root_ys = [G.nodes[r]["Y"] for r in roots]
@@ -217,7 +217,7 @@ def make_grid(width):
     return G
 
 
-def draw_graph(G, graph_type="grid"):
+def draw_graph(G, graph_type="grid", with_labels=True):
     """Draws a graph using node position attributes.
 
     Args:
@@ -229,4 +229,4 @@ def draw_graph(G, graph_type="grid"):
         pos = {i: (G.nodes[i]["X"], G.nodes[i]["Y"]) for i in G.nodes}
     elif graph_type == "triangular":
         pos = {i: G.nodes[i]["pos"] for i in G.nodes}
-    nx.draw(G, pos=pos, with_labels=True)
+    nx.draw(G, pos=pos, with_labels=with_labels)

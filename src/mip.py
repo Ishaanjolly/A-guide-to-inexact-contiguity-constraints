@@ -781,6 +781,7 @@ def single_district_mip(
         ideal_population=ideal_population,
         verbose=verbose,
     )
+
     model.build(pool_search=pool_search, pool_size=pool_size)
     metrics = model.solve(
         time_limit=time_limit,
@@ -810,7 +811,6 @@ def multi_district_mip(
     log_file=None,
     model_file=None,
 ):
-    """Build and solve a multi-district MIP model."""
     model = MultiDistrictModel(
         G,
         k,
