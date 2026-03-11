@@ -1,0 +1,2 @@
+time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,roots,districts,deviation,contiguity_distance,k,distance_metric
+7.390285968780518,hop_moi,hop_moi,72903906.44444369,,1188,0,Interrupted,cut,97.19626168224299,5,108,"[56, 26, 40, 27]",,50,N/A,4,euclidean
