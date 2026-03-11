@@ -4,13 +4,19 @@ import networkx as nx
 
 def squared_euclidean_distance(G, i, j):
     """
-    Compute squared euclidean distance between nodes i and j.
+    Compute squared Euclidean distance between two nodes.
 
-    Args:
-        G: NetworkX graph with node coordinates
-        i, j: Node identifiers
-        coord_type: 'geographic' uses C_X, C_Y (degrees lon/lat)
-                    'projected'  uses X, Y (km, after update_attributes)
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``X``, ``Y`` attributes on nodes.
+    i, j : node
+        Node identifiers.
+
+    Returns
+    -------
+    float
+        Squared Euclidean distance.
     """
     dx = G.nodes[i]["X"] - G.nodes[j]["X"]
     dy = G.nodes[i]["Y"] - G.nodes[j]["Y"]
@@ -19,26 +25,31 @@ def squared_euclidean_distance(G, i, j):
 
 def euclidean_distance(G, i, j):
     """
-    Compute Euclidean distance between nodes i and j.
+    Compute Euclidean distance between two nodes.
 
-    Args:
-        G: NetworkX graph with node coordinates
-        i, j: Node identifiers
-        coord_type: 'geographic' uses C_X, C_Y (degrees lon/lat)
-                    'projected'  uses X, Y (km, after update_attributes)
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``X``, ``Y`` attributes on nodes.
+    i, j : node
+        Node identifiers.
+
+    Returns
+    -------
+    float
+        Euclidean distance.
     """
     return math.sqrt(squared_euclidean_distance(G, i, j))
 
 
 def set_euclidean_weights(G):
     """
-    Set the 'weight' attribute on every edge to the Euclidean distance
-    between the two endpoint centroids (C_X, C_Y).
+    Set the ``weight`` edge attribute to the Euclidean distance between endpoints.
 
-    Must be called after C_X and C_Y are present on all nodes (i.e. after
-    update_attributes or read_graph_from_json).  The weighted contiguity
-    methods (tree/dist/dag with use_weighted_distances=True) and the
-    weighted_moi objective both consume this 'weight' attribute.
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``X``, ``Y`` attributes on nodes.
     """
     for i, j in G.edges:
         G.edges[i, j]["weight"] = euclidean_distance(G, i, j)
@@ -56,15 +67,27 @@ def _equals(a, b, epsilon=1e-12):
     return abs(a - b) < epsilon
 
 
-def select_corners(G, k=4):
+def get_roots(G, k=4):
     """
-    Select k root nodes at the geographic corners of the graph using
-    diagonal projections on projected (X, Y) coordinates.
+    Select root nodes at the geographic corners of the graph.
 
-    k=4 returns [NE, SE, NW, SW].
-    k=2 returns [SE, NW] (east–west axis).
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``X``, ``Y`` attributes on nodes.
+    k : {2, 4}
+        Number of corners. ``4`` returns [NE, SE, NW, SW];
+        ``2`` returns [SE, NW].
 
-    Requires X, Y attributes on nodes (call update_attributes first).
+    Returns
+    -------
+    list
+        Node identifiers of the selected corners.
+
+    Raises
+    ------
+    ValueError
+        If ``k`` is not 4.
     """
     NE_val = max(_x(G, i) + _y(G, i) for i in G.nodes)
     SE_val = max(_x(G, i) - _y(G, i) for i in G.nodes)
@@ -78,63 +101,67 @@ def select_corners(G, k=4):
 
     if k == 4:
         return [NE, SE, NW, SW]
-    elif k == 2:
-        return [SE, NW]
     else:
         raise ValueError(f"Only k=2 or k=4, got k={k}")
 
 
-def get_roots(G, k):
-    """
-    Select k root nodes for the MIP model.
-
-    Args:
-        G: NetworkX graph with node attributes set by update_attributes
-        k: Number of roots (districts)
-        root_strategy: 'corner'      — diagonal corner projection, k=2 or k=4
-                       'east_west'   — westernmost + easternmost, k=2 only
-                       'north_south' — southernmost + northernmost, k=2 only
-
-    Returns:
-        List of k node identifiers
-    """
-    return select_corners(G, k=k)
-
-
 def sq_eucl_dist_to_point(G, i, cx, cy):
     """
-    Squared geographic distance from node i to an arbitrary point (cx, cy).
+    Squared distance from node i to an arbitrary point.
 
-    Args:
-        G: NetworkX graph with C_X, C_Y on nodes
-        i: Node identifier
-        cx, cy: Target longitude and latitude
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``C_X``, ``C_Y`` attributes on nodes.
+    i : node
+        Node identifier.
+    cx, cy : float
+        Target longitude and latitude.
 
-    Returns:
-        Squared Euclidean distance (no sqrt — only used for comparisons)
+    Returns
+    -------
+    float
+        Squared Euclidean distance.
     """
+
     return (G.nodes[i]["C_X"] - cx) ** 2 + (G.nodes[i]["C_Y"] - cy) ** 2
 
 
 def nearest_node(G, district, cx, cy):
     """
-    Find the node in `district` closest to geographic point (cx, cy).
+    Find the node in a district closest to a geographic point.
 
-    Useful for assigning a root to an existing district polygon centroid.
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``C_X``, ``C_Y`` attributes on nodes.
+    district : iterable
+        Node identifiers to search within.
+    cx, cy : float
+        Target longitude and latitude.
 
-    Args:
-        G: NetworkX graph with C_X, C_Y on nodes
-        district: Iterable of node identifiers
-        cx, cy: Target longitude and latitude
-
-    Returns:
-        Node identifier of the closest node in district
+    Returns
+    -------
+    node
+        Closest node identifier.
     """
     return min(district, key=lambda i: sq_eucl_dist_to_point(G, i, cx, cy))
 
 
 def make_grid_graph(nrows, ncols):
-    """Build an nrows×ncols grid graph with integer node IDs and TOTPOP=1."""
+    """
+    Build a grid graph with integer node IDs and unit populations.
+
+    Parameters
+    ----------
+    nrows, ncols : int
+        Grid dimensions.
+
+    Returns
+    -------
+    networkx.Graph
+        Grid graph with ``TOTPOP=1``, ``X``, ``Y`` on each node.
+    """
     G = nx.grid_2d_graph(nrows, ncols)
     mapping = dict(zip(G, range(nrows * ncols)))
     G = nx.relabel_nodes(G, mapping)
