@@ -56,7 +56,6 @@ class DistrictingModel:
         self.use_weighted_distances = use_weighted_distances
         self.verbose = verbose
 
-        # Calculate population bounds
         if ideal_population is None:
             ideal_population = (
                 sum(self.DG.nodes[i]["TOTPOP"] for i in self.DG.nodes) / k
@@ -67,7 +66,6 @@ class DistrictingModel:
         if self.verbose:
             print("Using L, U, k =", self.DG._L, self.DG._U, k)
 
-        # Initialize model
         self.model = gp.Model()
         self.model.Params.OutputFlag = 1
         self.model.Params.LogToConsole = 1
@@ -97,21 +95,16 @@ class DistrictingModel:
                 "Cannot use shirabe contiguity ('shir') when pool_search > 0"
             )
 
-    def _create_variables(self):
-        """Create decision variables. Override in subclasses."""
-        raise NotImplementedError
-
-    def _add_population_constraints(self):
-        """Add population balance constraints. Override in subclasses."""
-        raise NotImplementedError
-
-    def _add_assignment_constraints(self):
-        """Add assignment constraints. Override in subclasses."""
-        raise NotImplementedError
-
-    def _add_cut_edge_constraints(self, pool_search=0):
-        """Add y[u,v] cut-edge constraints when needed by the objective."""
-        raise NotImplementedError
+    def _get_predecessors(self, root):
+        """Get BFS or Dijkstra predecessors and distances from root."""
+        if self.use_weighted_distances:
+            pred, dist = nx.dijkstra_predecessor_and_distance(
+                self.DG, source=root, weight="weight"
+            )
+        else:
+            pred = nx.predecessor(self.DG, source=root)
+            dist = nx.single_source_shortest_path_length(self.DG, source=root)
+        return pred, dist
 
     def _setup_objective(self):
         """Dispatch to the appropriate objective setup."""
@@ -126,41 +119,6 @@ class DistrictingModel:
         elif self.objective == "inverse_polsby_popper":
             self._setup_polsby_popper_objective()
 
-    def _setup_moi_objective(self):
-        """Setup Moment of Inertia objectives. Override in subclasses."""
-        raise NotImplementedError
-
-    def _setup_cut_edges_objective(self):
-        """Minimize number of cut edges."""
-        raise NotImplementedError
-
-    def _setup_shared_perim_objective(self):
-        """Minimize shared perimeter of cut edges."""
-        raise NotImplementedError
-
-    def _setup_perim_objective(self):
-        """Minimize total perimeter (shared + boundary)."""
-        raise NotImplementedError
-
-    def _setup_polsby_popper_objective(self):
-        """Minimize inverse Polsby-Popper compactness score."""
-        raise NotImplementedError
-
-    # ------------------------------------------------------------------
-    # Contiguity
-    # ------------------------------------------------------------------
-
-    def _get_predecessors(self, root):
-        """Get BFS or Dijkstra predecessors and distances from root."""
-        if self.use_weighted_distances:
-            pred, dist = nx.dijkstra_predecessor_and_distance(
-                self.DG, source=root, weight="weight"
-            )
-        else:
-            pred = nx.predecessor(self.DG, source=root)
-            dist = nx.single_source_shortest_path_length(self.DG, source=root)
-        return pred, dist
-
     def _add_contiguity_constraints(self):
         """Dispatch to the appropriate contiguity method."""
         if self.contiguity == "tree":
@@ -173,18 +131,6 @@ class DistrictingModel:
             self._add_shirabe_contiguity()
         elif self.contiguity in {"cut", "lcut"}:
             self._add_cut_contiguity()
-
-    def _add_tree_contiguity(self):
-        raise NotImplementedError
-
-    def _add_dist_contiguity(self):
-        raise NotImplementedError
-
-    def _add_dag_contiguity(self):
-        raise NotImplementedError
-
-    def _add_shirabe_contiguity(self):
-        raise NotImplementedError
 
     def _add_cut_contiguity(self):
         """Shared cut-contiguity setup (enables lazy constraints)."""
@@ -218,7 +164,7 @@ class DistrictingModel:
 
         self._validate_pool(pool_search, pool_size)
 
-        self.model.Params.MIPGap = 0.00  ## DEFAULT VALUE
+        self.model.Params.MIPGap = 0.00
         self.model.Params.PoolSearchMode = pool_search
         self.model.Params.PoolSolutions = pool_size
         self.model.Params.TimeLimit = time_limit
@@ -231,11 +177,7 @@ class DistrictingModel:
             self.model.write(model_file)
 
         self.model.update()
-
-        if self.model._callback is not None:
-            self.model.optimize(self.model._callback)
-        else:
-            self.model.optimize()
+        self.model.optimize(self.model._callback)
 
         return self._build_metrics()
 
@@ -253,18 +195,11 @@ class DistrictingModel:
             GRB.INTERRUPTED: "Interrupted",
         }
 
-        obj_val = None
-        if self.model.SolCount > 0:
-            try:
-                obj_val = self.model.ObjVal
-            except Exception:
-                pass
-
         return {
             "time_best": self.model.Runtime,
             "objective_type": self.objective,
-            "objective": obj_val,
-            "obj_bound": self.model.ObjBound,
+            "objective": self.model.ObjVal if self.model.SolCount > 0 else None,
+            "obj_bound": self.model.ObjBound if self.model.SolCount > 0 else None,
             "obj_gap": self.model.MIPGap if self.model.SolCount > 0 else None,
             "nonzeros": self.model.NumNZs,
             "num_solutions": self.model.SolCount,
@@ -559,7 +494,6 @@ class MultiDistrictModel(DistrictingModel):
             for j in range(self.k)
         )
 
-        # is_cut[u,v] = 1 iff edge {u,v} is cut by any district boundary
         undirected_edges = [(u, v) for u, v in self.DG.edges if u < v]
         m._is_cut = m.addVars(undirected_edges, vtype=GRB.BINARY)
         m.addConstrs(
@@ -781,7 +715,6 @@ def single_district_mip(
         ideal_population=ideal_population,
         verbose=verbose,
     )
-
     model.build(pool_search=pool_search, pool_size=pool_size)
     metrics = model.solve(
         time_limit=time_limit,
@@ -811,6 +744,7 @@ def multi_district_mip(
     log_file=None,
     model_file=None,
 ):
+    """Build and solve a multi-district MIP model."""
     model = MultiDistrictModel(
         G,
         k,
