@@ -9,11 +9,7 @@ class BaseParams:
 
     state_epsg_mapping = {
         "AL": {"name": "Alabama", "epsg": "6355", "congressional_districts": 7},
-        "AK": {
-            "name": "Alaska",
-            "epsg": "6397",
-            "congressional_districts": 1,
-        },  # Biggest state in the US
+        "AK": {"name": "Alaska","epsg": "6397","congressional_districts": 1,}, 
         "AZ": {"name": "Arizona", "epsg": "6404", "congressional_districts": 9},
         "AR": {"name": "Arkansas", "epsg": "6410", "congressional_districts": 4},
         "CA": {"name": "California", "epsg": "6419", "congressional_districts": 52},
@@ -54,11 +50,7 @@ class BaseParams:
         "SC": {"name": "South Carolina", "epsg": "6569", "congressional_districts": 7},
         "SD": {"name": "South Dakota", "epsg": "6571", "congressional_districts": 1},
         "TN": {"name": "Tennessee", "epsg": "6575", "congressional_districts": 9},
-        "TX": {
-            "name": "Texas",
-            "epsg": "6583",
-            "congressional_districts": 38,
-        },  # Second biggest state in the US
+        "TX": {"name": "Texas","epsg": "6583","congressional_districts": 38,}, 
         "UT": {"name": "Utah", "epsg": "6619", "congressional_districts": 4},
         "VT": {"name": "Vermont", "epsg": "6589", "congressional_districts": 1},
         "VA": {"name": "Virginia", "epsg": "6592", "congressional_districts": 11},
