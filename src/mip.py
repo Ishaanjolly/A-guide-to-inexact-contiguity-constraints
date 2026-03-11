@@ -9,7 +9,7 @@ import gurobipy as gp
 from gurobipy import GRB
 import math
 import os
-from src.utils import euclidean_distance
+from src.utils import squared_euclidean_distance
 from src.mip_utils import (
     single_district_cut_callback,
     multi_district_cut_callback,
@@ -241,13 +241,13 @@ class SingleDistrictModel(DistrictingModel):
     def _add_population_constraints(self):
         if self.deviation_persons is not None:
             self.model.addConstr(
-                gp.quicksum(
+                gp.sum(
                     self.DG.nodes[i]["TOTPOP"] * self.model._x[i] for i in self.DG.nodes
                 )
                 >= self.DG._L
             )
             self.model.addConstr(
-                gp.quicksum(
+                gp.sum(
                     self.DG.nodes[i]["TOTPOP"] * self.model._x[i] for i in self.DG.nodes
                 )
                 <= self.DG._U
@@ -272,7 +272,7 @@ class SingleDistrictModel(DistrictingModel):
         if self.objective == "hop_moi":
             dist = nx.single_source_shortest_path_length(self.DG, source=self.root)
             self.model.setObjective(
-                gp.quicksum(
+                gp.sum(
                     dist[i] ** 2 * self.G.nodes[i]["TOTPOP"] * self.model._x[i]
                     for i in self.G.nodes
                 ),
@@ -283,7 +283,7 @@ class SingleDistrictModel(DistrictingModel):
                 self.DG, source=self.root, weight="weight"
             )
             self.model.setObjective(
-                gp.quicksum(
+                gp.sum(
                     dist[i] ** 2 * self.G.nodes[i]["TOTPOP"] * self.model._x[i]
                     for i in self.G.nodes
                 ),
@@ -291,8 +291,8 @@ class SingleDistrictModel(DistrictingModel):
             )
         elif self.objective == "euclidean_moi":
             self.model.setObjective(
-                gp.quicksum(
-                    euclidean_distance(self.G, i, self.root) ** 2
+                gp.sum(
+                    squared_euclidean_distance(self.G, i, self.root)
                     * self.G.nodes[i]["TOTPOP"]
                     * self.model._x[i]
                     for i in self.G.nodes
@@ -301,11 +301,11 @@ class SingleDistrictModel(DistrictingModel):
             )
 
     def _setup_cut_edges_objective(self):
-        self.model.setObjective(gp.quicksum(self.model._y), GRB.MINIMIZE)
+        self.model.setObjective(gp.sum(self.model._y), GRB.MINIMIZE)
 
     def _setup_shared_perim_objective(self):
         self.model.setObjective(
-            gp.quicksum(
+            gp.sum(
                 self.DG.edges[u, v]["shared_perim"] * self.model._y[u, v]
                 for u, v in self.DG.edges
             ),
@@ -314,11 +314,11 @@ class SingleDistrictModel(DistrictingModel):
 
     def _setup_perim_objective(self):
         self.model.setObjective(
-            gp.quicksum(
+            gp.sum(
                 self.DG.edges[u, v]["shared_perim"] * self.model._y[u, v]
                 for u, v in self.DG.edges
             )
-            + gp.quicksum(
+            + gp.sum(
                 self.DG.nodes[i]["boundary_perim"] * self.model._x[i]
                 for i in self.DG.nodes
                 if self.DG.nodes[i]["boundary_node"]
@@ -334,16 +334,15 @@ class SingleDistrictModel(DistrictingModel):
         m.setObjective(m._z, GRB.MINIMIZE)
         m.addConstr(m._P * m._P <= 4 * math.pi * m._A * m._z)
         m.addConstr(
-            m._A
-            == gp.quicksum(self.DG.nodes[i]["area"] * m._x[i] for i in self.DG.nodes)
+            m._A == gp.sum(self.DG.nodes[i]["area"] * m._x[i] for i in self.DG.nodes)
         )
         m.addConstr(
             m._P
-            == gp.quicksum(
+            == gp.sum(
                 self.DG.edges[u, v]["shared_perim"] * m._y[u, v]
                 for u, v in self.DG.edges
             )
-            + gp.quicksum(
+            + gp.sum(
                 self.DG.nodes[i]["boundary_perim"] * m._x[i]
                 for i in self.DG.nodes
                 if self.DG.nodes[i]["boundary_node"]
@@ -361,7 +360,7 @@ class SingleDistrictModel(DistrictingModel):
     def _add_dist_contiguity(self):
         pred, _ = self._get_predecessors(self.root)
         self.model.addConstrs(
-            self.model._x[i] <= gp.quicksum(self.model._x[t] for t in pred[i])
+            self.model._x[i] <= gp.sum(self.model._x[t] for t in pred[i])
             for i in self.DG.nodes
             if i != self.root
         )
@@ -377,7 +376,7 @@ class SingleDistrictModel(DistrictingModel):
         position = {ordering[p][0]: p for p in range(len(ordering))}
         self.model.addConstrs(
             self.model._x[i]
-            <= gp.quicksum(
+            <= gp.sum(
                 self.model._x[t]
                 for t in self.DG.neighbors(i)
                 if position[t] < position[i]
@@ -391,13 +390,12 @@ class SingleDistrictModel(DistrictingModel):
         m._f = m.addVars(self.DG.edges, name="f")
         M = self.DG.number_of_nodes() - 1
         m.addConstrs(
-            gp.quicksum(m._f[j, i] - m._f[i, j] for j in self.DG.neighbors(i))
-            == m._x[i]
+            gp.sum(m._f[j, i] - m._f[i, j] for j in self.DG.neighbors(i)) == m._x[i]
             for i in self.DG.nodes
             if i != self.root
         )
         m.addConstrs(
-            gp.quicksum(m._f[j, i] for j in self.DG.neighbors(i)) <= M * m._x[i]
+            gp.sum(m._f[j, i] for j in self.DG.neighbors(i)) <= M * m._x[i]
             for i in self.DG.nodes
             if i != self.root
         )
@@ -456,21 +454,21 @@ class MultiDistrictModel(DistrictingModel):
 
     def _add_assignment_constraints(self):
         self.model.addConstrs(
-            gp.quicksum(self.model._x[i, j] for j in range(self.k)) == 1
+            gp.sum(self.model._x[i, j] for j in range(self.k)) == 1
             for i in self.DG.nodes
         )
 
     def _add_population_constraints(self):
         for j in range(self.k):
             self.model.addConstr(
-                gp.quicksum(
+                gp.sum(
                     self.DG.nodes[i]["TOTPOP"] * self.model._x[i, j]
                     for i in self.DG.nodes
                 )
                 >= self.DG._L
             )
             self.model.addConstr(
-                gp.quicksum(
+                gp.sum(
                     self.DG.nodes[i]["TOTPOP"] * self.model._x[i, j]
                     for i in self.DG.nodes
                 )
@@ -497,11 +495,11 @@ class MultiDistrictModel(DistrictingModel):
         undirected_edges = [(u, v) for u, v in self.DG.edges if u < v]
         m._is_cut = m.addVars(undirected_edges, vtype=GRB.BINARY)
         m.addConstrs(
-            m._is_cut[u, v] == gp.quicksum(m._y[u, v, j] for j in range(self.k))
+            m._is_cut[u, v] == gp.sum(m._y[u, v, j] for j in range(self.k))
             for u, v in undirected_edges
         )
         m.addConstrs(
-            m._is_cut[u, v] == gp.quicksum(m._y[v, u, j] for j in range(self.k))
+            m._is_cut[u, v] == gp.sum(m._y[v, u, j] for j in range(self.k))
             for u, v in undirected_edges
         )
         self._undirected_edges = undirected_edges
@@ -534,16 +532,16 @@ class MultiDistrictModel(DistrictingModel):
             elif self.objective == "euclidean_moi":
                 for i in self.DG.nodes:
                     self.model._x[i, j].obj = (
-                        euclidean_distance(self.G, i, root) ** 2
+                        squared_euclidean_distance(self.G, i, root)
                         * self.G.nodes[i]["TOTPOP"]
                     )
 
     def _setup_cut_edges_objective(self):
-        self.model.setObjective(gp.quicksum(self.model._is_cut), GRB.MINIMIZE)
+        self.model.setObjective(gp.sum(self.model._is_cut), GRB.MINIMIZE)
 
     def _setup_shared_perim_objective(self):
         self.model.setObjective(
-            gp.quicksum(
+            gp.sum(
                 self.DG.edges[u, v]["shared_perim"] * self.model._is_cut[u, v]
                 for u, v in self._undirected_edges
             ),
@@ -552,12 +550,12 @@ class MultiDistrictModel(DistrictingModel):
 
     def _setup_perim_objective(self):
         self.model.setObjective(
-            gp.quicksum(
+            gp.sum(
                 self.DG.edges[u, v]["shared_perim"] * self.model._y[u, v, j]
                 for u, v in self.DG.edges
                 for j in range(self.k)
             )
-            + gp.quicksum(
+            + gp.sum(
                 self.DG.nodes[i]["boundary_perim"]
                 for i in self.DG.nodes
                 if self.DG.nodes[i]["boundary_node"]
@@ -572,7 +570,7 @@ class MultiDistrictModel(DistrictingModel):
         m._P = m.addVars(self.k, name="P")
 
         if self.objective == "inverse_polsby_popper":
-            m.setObjective((1 / self.k) * gp.quicksum(m._z), GRB.MINIMIZE)
+            m.setObjective((1 / self.k) * gp.sum(m._z), GRB.MINIMIZE)
         elif self.objective == "bottleneck_polsby_popper":
             m._worst_z = m.addVar(name="worst_z")
             m.setObjective(m._worst_z, GRB.MINIMIZE)
@@ -583,16 +581,16 @@ class MultiDistrictModel(DistrictingModel):
         )
         m.addConstrs(
             m._A[j]
-            == gp.quicksum(self.DG.nodes[i]["area"] * m._x[i, j] for i in self.DG.nodes)
+            == gp.sum(self.DG.nodes[i]["area"] * m._x[i, j] for i in self.DG.nodes)
             for j in range(self.k)
         )
         m.addConstrs(
             m._P[j]
-            == gp.quicksum(
+            == gp.sum(
                 self.DG.edges[u, v]["shared_perim"] * m._y[u, v, j]
                 for u, v in self.DG.edges
             )
-            + gp.quicksum(
+            + gp.sum(
                 self.DG.nodes[i]["boundary_perim"] * m._x[i, j]
                 for i in self.DG.nodes
                 if self.DG.nodes[i]["boundary_node"]
@@ -615,7 +613,7 @@ class MultiDistrictModel(DistrictingModel):
             root = self.roots[j]
             pred, _ = self._get_predecessors(root)
             self.model.addConstrs(
-                self.model._x[i, j] <= gp.quicksum(self.model._x[t, j] for t in pred[i])
+                self.model._x[i, j] <= gp.sum(self.model._x[t, j] for t in pred[i])
                 for i in self.DG.nodes
                 if i != root
             )
@@ -633,7 +631,7 @@ class MultiDistrictModel(DistrictingModel):
             position = {ordering[p][0]: p for p in range(len(ordering))}
             self.model.addConstrs(
                 self.model._x[i, j]
-                <= gp.quicksum(
+                <= gp.sum(
                     self.model._x[t, j]
                     for t in self.DG.neighbors(i)
                     if position[t] < position[i]
@@ -649,14 +647,13 @@ class MultiDistrictModel(DistrictingModel):
         for j in range(self.k):
             root = self.roots[j]
             m.addConstrs(
-                gp.quicksum(m._f[u, v, j] - m._f[v, u, j] for u in self.DG.neighbors(v))
+                gp.sum(m._f[u, v, j] - m._f[v, u, j] for u in self.DG.neighbors(v))
                 == m._x[v, j]
                 for v in self.DG.nodes
                 if v != root
             )
             m.addConstrs(
-                gp.quicksum(m._f[u, v, j] for u in self.DG.neighbors(v))
-                <= M * m._x[v, j]
+                gp.sum(m._f[u, v, j] for u in self.DG.neighbors(v)) <= M * m._x[v, j]
                 for v in self.DG.nodes
                 if v != root
             )
