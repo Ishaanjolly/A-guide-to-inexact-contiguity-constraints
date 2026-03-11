@@ -17,7 +17,7 @@ def run_enumeration_experiment(
     deviations,
     contiguity_models,
     root,
-    k=2,
+    k=4,
     distance_metric=None,
     pool_size=100_000,
     time_limit=1800,
@@ -124,7 +124,6 @@ def run_optimization_experiment(
     k,
     distance_metric="euclidean",
     time_limit=1800,
-    root_strategy="corner",
     results_file="optimization_results.csv",
 ):
     """
@@ -147,7 +146,7 @@ def run_optimization_experiment(
     time_limit : float
         Time limit per solve in seconds.
     root_strategy : str
-        Passed to get_roots(); one of 'corner', 'east_west', 'north_south'.
+        To get the corner roots
     results_file : str
         CSV file to save/append results after every run.
 
@@ -158,7 +157,7 @@ def run_optimization_experiment(
     """
     G = G_base.copy()
 
-    roots = get_roots(G, k, root_strategy=root_strategy)
+    roots = get_roots(G, k)
     print(f"Selected roots: {roots}")
     print(f"Distance metric: {distance_metric}")
 
@@ -171,7 +170,7 @@ def run_optimization_experiment(
     experiments = []
     for deviation in deviations:
         for contiguity in contiguity_models:
-            for objective in objectives:
+            for objective_type in objectives:
                 use_weighted = (
                     distance_metric == "euclidean" and contiguity in distance_dependent
                 )
@@ -182,7 +181,7 @@ def run_optimization_experiment(
                     {
                         "deviation": deviation,
                         "contiguity": contiguity,
-                        "objective": objective,
+                        "objective_type": objective_type,
                         "use_weighted": use_weighted,
                         "contiguity_distance": contiguity_dist_label,
                     }
@@ -198,14 +197,14 @@ def run_optimization_experiment(
         print(
             f"\n[{idx + 1}/{total}] deviation={exp['deviation']} | "
             f"contiguity={exp['contiguity']} (dist: {exp['contiguity_distance']}) | "
-            f"objective={exp['objective']}"
+            f"objective_type={exp['objective_type']}"
         )
 
         metrics, _ = multi_district_mip(
             G=G,
             deviation_persons=exp["deviation"],
             contiguity=exp["contiguity"],
-            objective=exp["objective"],
+            objective=exp["objective_type"],
             roots=roots,
             k=k,
             time_limit=time_limit,
@@ -216,7 +215,7 @@ def run_optimization_experiment(
             {
                 "deviation": exp["deviation"],
                 "contiguity": exp["contiguity"],
-                "objective": exp["objective"],
+                "objective_type": exp["objective_type"],
                 "contiguity_distance": exp["contiguity_distance"],
                 "k": k,
                 "distance_metric": distance_metric,

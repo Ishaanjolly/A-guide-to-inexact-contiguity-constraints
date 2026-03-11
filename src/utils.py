@@ -2,7 +2,22 @@ import math
 import networkx as nx
 
 
-def euclidean_distance(G, i, j, coord_type="geographic"):
+def squared_euclidean_distance(G, i, j):
+    """
+    Compute squared euclidean distance between nodes i and j.
+
+    Args:
+        G: NetworkX graph with node coordinates
+        i, j: Node identifiers
+        coord_type: 'geographic' uses C_X, C_Y (degrees lon/lat)
+                    'projected'  uses X, Y (km, after update_attributes)
+    """
+    dx = G.nodes[i]["X"] - G.nodes[j]["X"]
+    dy = G.nodes[i]["Y"] - G.nodes[j]["Y"]
+    return dx * dx + dy * dy
+
+
+def euclidean_distance(G, i, j):
     """
     Compute Euclidean distance between nodes i and j.
 
@@ -12,13 +27,7 @@ def euclidean_distance(G, i, j, coord_type="geographic"):
         coord_type: 'geographic' uses C_X, C_Y (degrees lon/lat)
                     'projected'  uses X, Y (km, after update_attributes)
     """
-    if coord_type == "geographic":
-        dx = G.nodes[i]["C_X"] - G.nodes[j]["C_X"]
-        dy = G.nodes[i]["C_Y"] - G.nodes[j]["C_Y"]
-    else:
-        dx = G.nodes[i]["X"] - G.nodes[j]["X"]
-        dy = G.nodes[i]["Y"] - G.nodes[j]["Y"]
-    return math.sqrt(dx * dx + dy * dy)
+    return math.sqrt(squared_euclidean_distance(G, i, j))
 
 
 def set_euclidean_weights(G):
@@ -72,32 +81,10 @@ def select_corners(G, k=4):
     elif k == 2:
         return [SE, NW]
     else:
-        raise ValueError(f"select_corners supports k=2 or k=4, got k={k}")
+        raise ValueError(f"Only k=2 or k=4, got k={k}")
 
 
-def select_roots_east_west(G):
-    """
-    Select the westernmost and easternmost nodes using geographic C_X coordinates.
-
-    Returns:
-        [west_node, east_node]
-    """
-    x_coords = {i: G.nodes[i]["C_X"] for i in G.nodes}
-    return [min(x_coords, key=x_coords.get), max(x_coords, key=x_coords.get)]
-
-
-def select_roots_north_south(G):
-    """
-    Select the southernmost and northernmost nodes using geographic C_Y coordinates.
-
-    Returns:
-        [south_node, north_node]
-    """
-    y_coords = {i: G.nodes[i]["C_Y"] for i in G.nodes}
-    return [min(y_coords, key=y_coords.get), max(y_coords, key=y_coords.get)]
-
-
-def get_roots(G, k, root_strategy="corner"):
+def get_roots(G, k):
     """
     Select k root nodes for the MIP model.
 
@@ -111,21 +98,7 @@ def get_roots(G, k, root_strategy="corner"):
     Returns:
         List of k node identifiers
     """
-    if root_strategy == "corner":
-        return select_corners(G, k=k)
-    elif root_strategy == "east_west":
-        if k != 2:
-            raise ValueError("east_west root strategy requires k=2")
-        return select_roots_east_west(G)
-    elif root_strategy == "north_south":
-        if k != 2:
-            raise ValueError("north_south root strategy requires k=2")
-        return select_roots_north_south(G)
-    else:
-        raise ValueError(
-            f"Unknown root_strategy: '{root_strategy}'. "
-            f"Choose from 'corner', 'east_west', or 'north_south'."
-        )
+    return select_corners(G, k=k)
 
 
 def sq_eucl_dist_to_point(G, i, cx, cy):
