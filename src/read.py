@@ -38,14 +38,13 @@ def read_graph_from_json(
         for i in G.nodes:
             G.nodes[i]["C_X"] = float(G.nodes[i]["INTPTLON20"])
             G.nodes[i]["C_Y"] = float(G.nodes[i]["INTPTLAT20"])
-            G.nodes[i]["TOTPOP"] = int(G.nodes[i]["P0010001"])
             x_m, y_m = proj(G.nodes[i]["C_X"], G.nodes[i]["C_Y"])
             G.nodes[i]["X"] = x_m / 1000  # meters to km
             G.nodes[i]["Y"] = y_m / 1000
 
     elif update_population:
         for i in G.nodes:
-            G.nodes[i]["TOTPOP"] = G.nodes[i]["P0010001"]
+            G.nodes[i]["TOTPOP"] = int(G.nodes[i]["P0010001"])
 
     if rescale_distance:
         ht = 100000
