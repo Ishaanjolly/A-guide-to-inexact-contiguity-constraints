@@ -15,8 +15,13 @@ def polsby_popper(G, district, label):
     return 4 * math.pi * area / (perim * perim)
 
 
-def average_polsby_popper(G, districts, verbose=False):
+def create_label_mapping(districts):
     label = {i: j for j in range(len(districts)) for i in districts[j]}
+    return label
+
+
+def average_polsby_popper(G, districts, verbose=False):
+    label = create_label_mapping(districts)
     if verbose:
         print("\nDistrict Polsby-Popper scores:")
         for p in range(len(districts)):
@@ -27,7 +32,7 @@ def average_polsby_popper(G, districts, verbose=False):
 
 
 def bottleneck_polsby_popper(G, districts, verbose=False):
-    label = {i: j for j in range(len(districts)) for i in districts[j]}
+    label = create_label_mapping(districts)
     if verbose:
         print("\nDistrict Polsby-Popper scores:")
         for p in range(len(districts)):
@@ -36,7 +41,7 @@ def bottleneck_polsby_popper(G, districts, verbose=False):
 
 
 def cut_edges(G, districts):
-    label = {i: j for j in range(len(districts)) for i in districts[j]}
+    label = create_label_mapping(districts)
     return sum(1 for i, j in G.edges if label[i] != label[j])
 
 
