@@ -1,0 +1,5 @@
+time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,roots,districts,deviation,contiguity_distance,k,distance_metric
+0.7959098815917969,hop_moi,,,,1972,0,Infeasible,tree,99.00204449302646,0,0,"[56, 26, 40, 27]",,50,,4,
+0.49960994720458984,euclidean_moi,,,,1972,0,Infeasible,tree,99.00204449302646,0,0,"[56, 26, 40, 27]",,50,,4,
+0.8096809387207031,weighted_moi,,,,1972,0,Infeasible,tree,99.00204449302646,0,0,"[56, 26, 40, 27]",,50,,4,
+1.6816158294677734,cut_edges,,,,9520,0,Infeasible,tree,99.8537474002525,0,0,"[56, 26, 40, 27]",,50,,4,
