@@ -9,7 +9,12 @@ incrementally to CSV after each run.
 import pandas as pd
 
 from src.mip import multi_district_mip
-from src.utils import get_roots, set_euclidean_weights
+from src.utils import (
+    get_roots,
+    set_euclidean_weights,
+    set_hop_M_weights,
+    set_euclidean_M_weights,
+)
 
 
 def run_enumeration_experiment(
@@ -164,6 +169,12 @@ def run_optimization_experiment(
     if distance_metric == "euclidean":
         print("Setting Euclidean edge weights...")
         set_euclidean_weights(G)
+    elif distance_metric == "hop_M":
+        print("Setting hierarchical hop-M edge weights...")
+        set_hop_M_weights(G)
+    elif distance_metric == "euclidean_M":
+        print("Setting hierarchical Euclidean-M edge weights...")
+        set_euclidean_M_weights(G)
 
     distance_dependent = {"tree", "dist", "dag"}
 
@@ -172,7 +183,8 @@ def run_optimization_experiment(
         for contiguity in contiguity_models:
             for objective_type in objectives:
                 use_weighted = (
-                    distance_metric == "euclidean" and contiguity in distance_dependent
+                    distance_metric in {"euclidean", "hop_M", "euclidean_M"}
+                    and contiguity in distance_dependent
                 )
                 contiguity_dist_label = (
                     distance_metric if contiguity in distance_dependent else "N/A"

@@ -71,10 +71,14 @@ def get_roots(G, k=4):
     """
     Select root nodes at the geographic corners of the graph.
 
+    If ``X``/``Y`` coordinates are absent, falls back to selecting ``k`` nodes
+    evenly spread across the GEOID20-sorted node order (which approximates
+    geographic spread for census geographies).
+
     Parameters
     ----------
     G : networkx.Graph
-        Graph with ``X``, ``Y`` attributes on nodes.
+        Graph with ``X``, ``Y`` attributes on nodes (or ``GEOID20`` for fallback).
     k : {2, 4}
         Number of corners. ``4`` returns [NE, SE, NW, SW];
         ``2`` returns [SE, NW].
@@ -89,6 +93,7 @@ def get_roots(G, k=4):
     ValueError
         If ``k`` is not 4.
     """
+
     NE_val = max(_x(G, i) + _y(G, i) for i in G.nodes)
     SE_val = max(_x(G, i) - _y(G, i) for i in G.nodes)
     NW_val = max(-_x(G, i) + _y(G, i) for i in G.nodes)
@@ -146,6 +151,81 @@ def nearest_node(G, district, cx, cy):
         Closest node identifier.
     """
     return min(district, key=lambda i: sq_eucl_dist_to_point(G, i, cx, cy))
+
+
+def two_sweep(G):
+    """
+    Approximate the Euclidean diameter of the graph's point set using two-sweep.
+
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``X``, ``Y`` attributes on nodes.
+
+    Returns
+    -------
+    float
+        Approximate diameter (Euclidean distance between the two farthest points found).
+    """
+    v1 = next(iter(G.nodes))
+    v2 = max(G.nodes, key=lambda i: squared_euclidean_distance(G, v1, i))
+    v3 = max(G.nodes, key=lambda i: squared_euclidean_distance(G, v2, i))
+    return 2 * euclidean_distance(G, v2, v3)
+
+
+def set_hop_M_weights(G):
+    """
+    Set hierarchical hop-M edge weights based on GEOID20 county/tract membership.
+
+    M = number of nodes. Edge weight is:
+      - 1            if endpoints share the same tract  (GEOID20[:11] match)
+      - 1 + M        if same county, different tract    (GEOID20[:5] match)
+      - 1 + M²       if different county
+
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``GEOID20`` attribute on nodes.
+    """
+    M = G.number_of_nodes()
+    M_sq = M * M
+    for i, j in G.edges:
+        gi = G.nodes[i]["GEOID20"]
+        gj = G.nodes[j]["GEOID20"]
+        if gi[:11] == gj[:11]:
+            G.edges[i, j]["weight"] = 1
+        elif gi[:5] == gj[:5]:
+            G.edges[i, j]["weight"] = 1 + M
+        else:
+            G.edges[i, j]["weight"] = 1 + M_sq
+
+
+def set_euclidean_M_weights(G):
+    """
+    Set hierarchical Euclidean-M edge weights based on GEOID20 county/tract membership.
+
+    M = two-sweep approximate diameter. Edge weight is:
+      - eucl(i,j)        if endpoints share the same tract  (GEOID20[:11] match)
+      - eucl(i,j) + M    if same county, different tract    (GEOID20[:5] match)
+      - eucl(i,j) + M²   if different county
+
+    Parameters
+    ----------
+    G : networkx.Graph
+        Graph with ``X``, ``Y``, ``GEOID20`` attributes on nodes.
+    """
+    M = two_sweep(G)
+    M_sq = M * M
+    for i, j in G.edges:
+        gi = G.nodes[i]["GEOID20"]
+        gj = G.nodes[j]["GEOID20"]
+        base = euclidean_distance(G, i, j)
+        if gi[:11] == gj[:11]:
+            G.edges[i, j]["weight"] = base
+        elif gi[:5] == gj[:5]:
+            G.edges[i, j]["weight"] = base + M
+        else:
+            G.edges[i, j]["weight"] = base + M_sq
 
 
 def make_grid_graph(nrows, ncols):
