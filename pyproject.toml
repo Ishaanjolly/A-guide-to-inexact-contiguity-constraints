@@ -1,5 +1,5 @@
 [project]
-name = "contiguity-constraints"
+name = "src"
 version = "0.1.0"
 description = "Code for the paper: A Guide to Inexact Contiguity Constraints by Austin Buchanan and Ishaan Jolly"
 authors = [
@@ -8,13 +8,13 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "geopandas==1.1.2",
-    "gurobipy==9.5.1",
-    "matplotlib==3.5.1",
-    "networkx==2.7.1",
-    "numpy==1.23.5",
-    "pandas==1.4.2",
-    "pyproj==3.7.2",
+    "geopandas>=1.0.1",
+    "gurobipy>=9.5.1",
+    "matplotlib>=3.5.1",
+    "networkx>=2.7.1",
+    "numpy>=1.23.5",
+    "pandas>=1.4.2",
+    "pyproj>=3.6.1",
 ]
 
 [tool.setuptools.packages.find]
