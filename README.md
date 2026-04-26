@@ -13,7 +13,7 @@ Restart your terminal after installing.
 ## 2. Clone the repo
 
 ```bash
-git clone 
+git clone https://github.com/Ishaanjolly/A-guide-to-inexact-contiguity-constraints.git
 cd A-guide-to-inexact-contiguity-constraints
 ```
 
