@@ -7,6 +7,8 @@
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+or 
+if you already 
 
 Restart your terminal after installing.
 
@@ -22,6 +24,7 @@ cd A-guide-to-inexact-contiguity-constraints
 ```bash
 uv venv inexact_contiguity --python 3.11
 source inexact_contiguity/bin/activate
+UV_PROJECT_ENVIRONMENT=inexact_contiguity uv sync
 ```
 
 ## 4. Install dependencies
