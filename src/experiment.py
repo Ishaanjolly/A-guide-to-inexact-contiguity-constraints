@@ -1,13 +1,13 @@
 """
 Experiment runner functions for redistricting MIP experiments.
-
+ 
 Provides helpers to run single enumeration/optimization solves and
 sweep over deviations × contiguity × objective grids, saving results
 incrementally to CSV after each run.
 """
-
+ 
 import pandas as pd
-
+ 
 from src.mip import multi_district_mip
 from src.utils import (
     get_roots,
@@ -15,8 +15,8 @@ from src.utils import (
     set_hop_M_weights,
     set_euclidean_M_weights,
 )
-
-
+ 
+ 
 def run_enumeration_experiment(
     G_base,
     deviations,
@@ -30,7 +30,7 @@ def run_enumeration_experiment(
 ):
     """
     Sweep enumeration over deviations × contiguity models, saving results to CSV.
-
+ 
     Parameters
     ----------
     G_base : networkx.Graph
@@ -51,7 +51,7 @@ def run_enumeration_experiment(
         Time limit per solve in seconds.
     results_file : str
         CSV file to save/append results after every run.
-
+ 
     Returns
     -------
     pandas.DataFrame
@@ -59,18 +59,26 @@ def run_enumeration_experiment(
     """
     print(f"Root(s): {root}")
     print(f"Distance metric: {distance_metric}")
-
+ 
     G = G_base.copy()
     if distance_metric == "euclidean":
         print("Setting Euclidean edge weights...")
         set_euclidean_weights(G)
-
+ 
     # Distance-dependent contiguity types use weighted distances
     distance_dependent = {"tree", "dist", "dag"}
-
+ 
+    seen_distance_independent = set()
     experiments = []
     for deviation in deviations:
         for contiguity in contiguity_models:
+            # Skip duplicate runs for distance-independent models (e.g. cut)
+            if contiguity not in distance_dependent:
+                key = (deviation, contiguity)
+                if key in seen_distance_independent:
+                    continue
+                seen_distance_independent.add(key)
+ 
             metric_label = (
                 distance_metric if contiguity in distance_dependent else "N/A"
             )
@@ -78,12 +86,12 @@ def run_enumeration_experiment(
                 distance_metric == "euclidean" and contiguity in distance_dependent
             )
             experiments.append((deviation, contiguity, metric_label, use_weighted))
-
+ 
     total = len(experiments)
     print(f"\nTotal experiments: {total}")
     print(f"Results will be saved to: {results_file}")
     print("=" * 72)
-
+ 
     results = []
     for idx, (deviation, contiguity, metric_label, use_weighted) in enumerate(
         experiments
@@ -92,7 +100,7 @@ def run_enumeration_experiment(
             f"\n[{idx + 1}/{total}] deviation={deviation} | "
             f"contiguity={contiguity} | distance={metric_label}"
         )
-
+ 
         metrics, _ = multi_district_mip(
             G=G,
             deviation_persons=deviation,
@@ -104,7 +112,7 @@ def run_enumeration_experiment(
             time_limit=time_limit,
             use_weighted_distances=use_weighted,
         )
-
+ 
         metrics.update(
             {
                 "deviation": deviation,
@@ -114,13 +122,13 @@ def run_enumeration_experiment(
             }
         )
         results.append(metrics)
-
+ 
         pd.DataFrame(results).to_csv(results_file, index=False)
         print(f"  Saved to {results_file}")
-
+ 
     return pd.DataFrame(results)
-
-
+ 
+ 
 def run_optimization_experiment(
     G_base,
     deviations,
@@ -133,7 +141,7 @@ def run_optimization_experiment(
 ):
     """
     Sweep optimization over deviations × contiguity × objectives, saving to CSV.
-
+ 
     Parameters
     ----------
     G_base : networkx.Graph
@@ -152,18 +160,18 @@ def run_optimization_experiment(
         Time limit per solve in seconds.
     results_file : str
         CSV file to save/append results after every run.
-
+ 
     Returns
     -------
     pandas.DataFrame
         All results collected during the sweep.
     """
     G = G_base.copy()
-
+ 
     roots = get_roots(G, k)
     print(f"Selected roots: {roots}")
     print(f"Distance metric: {distance_metric}")
-
+ 
     if distance_metric == "euclidean":
         print("Setting Euclidean edge weights...")
         set_euclidean_weights(G)
@@ -173,13 +181,21 @@ def run_optimization_experiment(
     elif distance_metric == "euclidean_M":
         print("Setting hierarchical Euclidean-M edge weights...")
         set_euclidean_M_weights(G)
-
+ 
     distance_dependent = {"tree", "dist", "dag"}
-
+ 
+    seen_distance_independent = set()
     experiments = []
     for deviation in deviations:
         for contiguity in contiguity_models:
             for objective_type in objectives:
+     
+                if contiguity not in distance_dependent:
+                    key = (deviation, contiguity, objective_type)
+                    if key in seen_distance_independent:
+                        continue
+                    seen_distance_independent.add(key)
+ 
                 use_weighted = (
                     distance_metric in {"euclidean", "hop_M", "euclidean_M"}
                     and contiguity in distance_dependent
@@ -196,12 +212,12 @@ def run_optimization_experiment(
                         "contiguity_distance": contiguity_dist_label,
                     }
                 )
-
+ 
     total = len(experiments)
     print(f"\nTotal experiments: {total}")
     print(f"Results will be saved to: {results_file}")
     print("=" * 72)
-
+ 
     results = []
     for idx, exp in enumerate(experiments):
         print(
@@ -209,7 +225,7 @@ def run_optimization_experiment(
             f"contiguity={exp['contiguity']} (dist: {exp['contiguity_distance']}) | "
             f"objective_type={exp['objective_type']}"
         )
-
+ 
         metrics, _ = multi_district_mip(
             G=G,
             deviation_persons=exp["deviation"],
@@ -220,7 +236,7 @@ def run_optimization_experiment(
             time_limit=time_limit,
             use_weighted_distances=exp["use_weighted"],
         )
-
+ 
         metrics.update(
             {
                 "deviation": exp["deviation"],
@@ -231,10 +247,10 @@ def run_optimization_experiment(
                 "distance_metric": distance_metric,
             }
         )
-
+ 
         results.append(metrics)
-
+ 
         pd.DataFrame(results).to_csv(results_file, index=False)
         print(f" Saved to {results_file}")
-
+ 
     return pd.DataFrame(results)
