@@ -8,7 +8,6 @@ import networkx as nx
 import gurobipy as gp
 from gurobipy import GRB
 import math
-import os
 from src.utils import squared_euclidean_distance
 from src.mip_utils import (
     single_district_cut_callback,
@@ -159,8 +158,6 @@ class DistrictingModel:
         model_file=None,
     ):
         """Solve the model and return a metrics dictionary."""
-        os.makedirs("logs", exist_ok=True)
-        os.makedirs("models", exist_ok=True)
 
         self._validate_pool(pool_search, pool_size)
 
@@ -199,7 +196,7 @@ class DistrictingModel:
             "time_best": self.model.Runtime,
             "objective_type": self.objective,
             "objective": self.model.ObjVal if self.model.SolCount > 0 else None,
-            "obj_bound": self.model.ObjBound, 
+            "obj_bound": self.model.ObjBound,
             "obj_gap": self.model.MIPGap if self.model.SolCount > 0 else None,
             "nonzeros": self.model.NumNZs,
             "num_solutions": self.model.SolCount,
@@ -454,8 +451,7 @@ class MultiDistrictModel(DistrictingModel):
 
     def _add_assignment_constraints(self):
         self.model.addConstrs(
-            sum(self.model._x[i, j] for j in range(self.k)) == 1
-            for i in self.DG.nodes
+            sum(self.model._x[i, j] for j in range(self.k)) == 1 for i in self.DG.nodes
         )
 
     def _add_population_constraints(self):
@@ -580,8 +576,7 @@ class MultiDistrictModel(DistrictingModel):
             m._P[j] * m._P[j] <= 4 * math.pi * m._A[j] * m._z[j] for j in range(self.k)
         )
         m.addConstrs(
-            m._A[j]
-            == sum(self.DG.nodes[i]["area"] * m._x[i, j] for i in self.DG.nodes)
+            m._A[j] == sum(self.DG.nodes[i]["area"] * m._x[i, j] for i in self.DG.nodes)
             for j in range(self.k)
         )
         m.addConstrs(
@@ -678,7 +673,6 @@ class MultiDistrictModel(DistrictingModel):
         else:
             metrics["districts"] = None
         return metrics
-
 
 
 def single_district_mip(
