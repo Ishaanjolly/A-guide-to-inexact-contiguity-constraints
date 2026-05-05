@@ -199,7 +199,7 @@ class DistrictingModel:
             "time_best": self.model.Runtime,
             "objective_type": self.objective,
             "objective": self.model.ObjVal if self.model.SolCount > 0 else None,
-            "obj_bound": self.model.ObjBound if self.model.SolCount > 0 else None,
+            "obj_bound": self.model.ObjBound, 
             "obj_gap": self.model.MIPGap if self.model.SolCount > 0 else None,
             "nonzeros": self.model.NumNZs,
             "num_solutions": self.model.SolCount,
@@ -679,8 +679,6 @@ class MultiDistrictModel(DistrictingModel):
             metrics["districts"] = None
         return metrics
 
-
-## =============== CLASS WRAPPERS ==============
 
 
 def single_district_mip(
