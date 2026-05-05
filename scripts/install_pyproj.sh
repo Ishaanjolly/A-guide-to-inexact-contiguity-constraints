@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# install_pyproj.sh — run with your venv activated
  
 python -m pip download pyproj --only-binary :all: --platform macosx_14_0_arm64 --python-version 3.11 --no-deps -d /tmp/pyproj_wheel
  
