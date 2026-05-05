@@ -1,25 +1,23 @@
 # Code for A guide to Inexact Contiguity Constraints
 
-# Setup for development
+#### Setup for development with uv
 
-## 1. Install uv
+### 1. Install uv
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
-or 
-if you already 
 
 Restart your terminal after installing.
 
-## 2. Clone the repo
+#### 2. Clone the repo
 
 ```bash
 git clone https://github.com/Ishaanjolly/A-guide-to-inexact-contiguity-constraints.git
 cd A-guide-to-inexact-contiguity-constraints
 ```
 
-## 3. Create and activate the virtual environment
+#### 3. Create and activate the virtual environment
 
 ```bash
 uv venv inexact_contiguity --python 3.11
@@ -27,21 +25,19 @@ source inexact_contiguity/bin/activate
 UV_PROJECT_ENVIRONMENT=inexact_contiguity uv sync
 ```
 
-## 4. Install dependencies
+#### 4. Install dependencies
 
 ```bash
 uv sync
 ```
-Ensure that you have `pyproj` installed, as it is required for the experiments. You can use `uv pip install pyproj --no-build` 
 
-## 5. Set up the Jupyter kernel
+#### 5. Set up the Jupyter kernel
 
 ```bash
-uv pip install ipykernel
 python -m ipykernel install --user --name=inexact_contiguity --display-name "Inexact Contiguity"
 ```
 
-# Solver Requirements
+#### Solver Requirements
 
 This project uses [Gurobi](https://www.gurobi.com/) as the default MILP solver. Gurobi offers free academic licences for university-affiliated researchers.
 
