@@ -37,17 +37,10 @@ uv sync
 python -m ipykernel install --user --name=inexact_contiguity --display-name "Inexact Contiguity"
 ```
 
-#### Solver Requirements
+### Solver Requirements
 
-This project uses [Gurobi](https://www.gurobi.com/) as the default MILP solver. Gurobi offers free academic licences for university-affiliated researchers.
-
-If you'd prefer to use an open-source solver, partial support for [SCIP](https://www.scipopt.org/) via PySCIPOpt is available:
-
-```bash
-uv run python src/experiment.py
-```
-
-Note that solve times and solution quality may differ from those reported in the paper when using alternative solvers.
+This project uses [Gurobi](https://www.gurobi.com/) as the default MILP solver. 
+Gurobi offers free academic licences for university-affiliated researchers.
 
 
 ## Citation 
