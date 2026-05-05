@@ -23,7 +23,7 @@ def run_enumeration_experiment(
     contiguity_models,
     root,
     k=4,
-    distance_metric=None,
+    distance_metric="hop",
     pool_size=100_000,
     time_limit=1800,
     results_file="enumeration_results.csv",
@@ -43,8 +43,8 @@ def run_enumeration_experiment(
         Root node ID(s).
     k : int
         Number of districts.
-    distance_metric : str or None
-        'euclidean' sets Euclidean edge weights; None uses unweighted graph.
+    distance_metric : str
+        'hop' uses unweighted (unit) edges; 'euclidean' sets Euclidean edge weights.
     pool_size : int
         Maximum solutions to enumerate per run.
     time_limit : float
@@ -58,12 +58,12 @@ def run_enumeration_experiment(
         All results collected during the sweep.
     """
     print(f"Root(s): {root}")
-    print(f"Distance metric: {distance_metric or 'None (unweighted)'}")
+    print(f"Distance metric: {distance_metric}")
 
     G = G_base.copy()
     if distance_metric == "euclidean":
         print("Setting Euclidean edge weights...")
-        set_euclidean_weights(G)  # ensure this function is defined
+        set_euclidean_weights(G)
 
     # Distance-dependent contiguity types use weighted distances
     distance_dependent = {"tree", "dist", "dag"}
@@ -99,7 +99,7 @@ def run_enumeration_experiment(
             contiguity=contiguity,
             roots=root,
             k=k,
-            pool_search=2,  # set default for enumeration
+            pool_search=2,
             pool_size=pool_size,
             time_limit=time_limit,
             use_weighted_distances=use_weighted,
@@ -150,8 +150,6 @@ def run_optimization_experiment(
         'euclidean' sets Euclidean edge weights on contiguity constraints.
     time_limit : float
         Time limit per solve in seconds.
-    root_strategy : str
-        To get the corner roots
     results_file : str
         CSV file to save/append results after every run.
 

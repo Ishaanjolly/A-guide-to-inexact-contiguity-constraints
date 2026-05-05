@@ -1,5 +1,5 @@
 [project]
-name = "src"
+name = "inexact_contiguity"
 version = "0.1.0"
 description = "Code for the paper: A Guide to Inexact Contiguity Constraints by Austin Buchanan and Ishaan Jolly"
 authors = [
