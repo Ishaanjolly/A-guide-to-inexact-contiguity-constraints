@@ -1,2 +1,0 @@
-time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,roots,districts,deviation,contiguity_distance,k,distance_metric
-58.06556820869446,hop_moi,,,,3095780,0,Interrupted,tree,99.99949571637566,0,0,"[36603, 68586, 152180, 11574]",,50,,4,
