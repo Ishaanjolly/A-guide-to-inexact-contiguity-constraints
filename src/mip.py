@@ -210,6 +210,7 @@ class DistrictingModel:
             * 100,
             "num_callbacks": self.model._numCallbacks,
             "num_lazy_cuts": self.model._numLazyCuts,
+            "bnb_nodes": self.model.NodeCount,
         }
 
 
