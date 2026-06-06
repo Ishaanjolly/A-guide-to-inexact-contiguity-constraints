@@ -80,7 +80,7 @@ def _read_coords_from_dbf(dbf_path):
 
 
 def read_graph_from_json(
-    json_file, state=None, update_population=True, rescale_distance=True
+    json_file, state=None, update_population=True
 ):
     """
     Reads a graph from a JSON adjacency file and optionally enriches node attributes.
@@ -94,14 +94,12 @@ def read_graph_from_json(
         update_population (bool): If ``True``, sets ``TOTPOP = P0010001`` on
             every node. Ignored when ``state`` is provided. Defaults to
             ``True``.
-        rescale_distance (bool): If ``True``, divides ``area``,
-            ``boundary_perim``, and ``shared_perim`` by 100,000 to convert
-            metres to ~100 km units for better Gurobi conditioning. Defaults
-            to ``True``.
+    
 
     Returns:
         networkx.Graph: The loaded graph with enriched node attributes.
     """
+    ht = 100000 # meters to 100 km ~ 1 degree of latitude
     with open(json_file) as f:
         data = json.load(f)
 
@@ -132,8 +130,8 @@ def read_graph_from_json(
                 G.nodes[i]["C_X"] = float(G.nodes[i][lon_key])
                 G.nodes[i]["C_Y"] = float(G.nodes[i][lat_key])
                 x_m, y_m = proj(G.nodes[i]["C_X"], G.nodes[i]["C_Y"])
-                G.nodes[i]["X"] = x_m / 1000  # meters to km
-                G.nodes[i]["Y"] = y_m / 1000
+                G.nodes[i]["X"] = x_m / ht  
+                G.nodes[i]["Y"] = y_m / ht
         else:
             # Fallback: read INTPTLAT20/INTPTLON20 from the companion .dbf file - thanks Claude
             dbf_path = os.path.splitext(json_file)[0] + ".dbf"
@@ -146,22 +144,21 @@ def read_graph_from_json(
                         G.nodes[i]["C_X"] = lon
                         G.nodes[i]["C_Y"] = lat
                         x_m, y_m = proj(lon, lat)
-                        G.nodes[i]["X"] = x_m / 1000
-                        G.nodes[i]["Y"] = y_m / 1000
+                        G.nodes[i]["X"] = x_m / ht
+                        G.nodes[i]["Y"] = y_m / ht
 
     if update_population:
         for i in G.nodes:
             G.nodes[i]["TOTPOP"] = int(G.nodes[i]["P0010001"])
 
-    if rescale_distance:
-        ht = 100000
-        for i in G.nodes:
-            if "area" in G.nodes[i]:
-                G.nodes[i]["area"] /= ht * ht
-            if G.nodes[i].get("boundary_node") and "boundary_perim" in G.nodes[i]:
-                G.nodes[i]["boundary_perim"] /= ht
-        for i, j in G.edges:
-            if "shared_perim" in G.edges[i, j]:
-                G.edges[i, j]["shared_perim"] /= ht
+    
+    for i in G.nodes:
+        if "area" in G.nodes[i]:
+            G.nodes[i]["area"] /= (ht * ht)
+        if G.nodes[i].get("boundary_node") and "boundary_perim" in G.nodes[i]:
+            G.nodes[i]["boundary_perim"] /= ht
+    for i, j in G.edges:
+        if "shared_perim" in G.edges[i, j]:
+            G.edges[i, j]["shared_perim"] /= ht
 
     return G
