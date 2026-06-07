@@ -519,13 +519,13 @@ class MultiDistrictModel(DistrictingModel):
             if self.objective == "hop_moi":
                 dist = nx.single_source_shortest_path_length(self.DG, source=root)
                 for i in self.DG.nodes:
-                    self.model._x[i, j].obj = dist[i] ** 2 * self.G.nodes[i]["TOTPOP"]
+                    self.model._x[i, j].obj = (dist[i] ** 2) * self.G.nodes[i]["TOTPOP"]
             elif self.objective == "weighted_moi":
                 dist = nx.single_source_dijkstra_path_length(
                     self.DG, source=root, weight="weight"
                 )
                 for i in self.DG.nodes:
-                    self.model._x[i, j].obj = dist[i] ** 2 * self.G.nodes[i]["TOTPOP"]
+                    self.model._x[i, j].obj = (dist[i] ** 2) * self.G.nodes[i]["TOTPOP"]
             elif self.objective == "euclidean_moi":
                 for i in self.DG.nodes:
                     self.model._x[i, j].obj = (
