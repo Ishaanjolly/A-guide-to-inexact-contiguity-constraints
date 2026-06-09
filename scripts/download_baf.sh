@@ -11,7 +11,7 @@
 #
 # Files are stored in data/baf/{cd118,sldu_2022,sldl_2022}/
 
-set -euo pipefail
+set -euo pipefail # Exit on error, undefined variable, or failed pipe
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
@@ -63,9 +63,3 @@ echo "  data/baf/cd118/       - Congressional district assignments"
 echo "  data/baf/sldu_2022/   - State Senate district assignments"
 echo "  data/baf/sldl_2022/   - State House district assignments"
 echo ""
-
-# Show Iowa files as a quick check
-echo "Iowa BAF files:"
-ls -la "$BAF_DIR/cd118/"*IA* 2>/dev/null || echo "  (no IA files in cd118)"
-ls -la "$BAF_DIR/sldu_2022/"*IA* 2>/dev/null || echo "  (no IA files in sldu_2022)"
-ls -la "$BAF_DIR/sldl_2022/"*IA* 2>/dev/null || echo "  (no IA files in sldl_2022)"
