@@ -17,6 +17,7 @@ dependencies = [
     "pyproj>=3.6.1",
     "ipykernel",
     "notebook>=7.5.6",
+    "pyscipopt>=6.2.1",
 ]
 
 [tool.setuptools.packages.find]
