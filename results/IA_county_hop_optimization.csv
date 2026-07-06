@@ -1,6 +1,4 @@
 time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,bnb_nodes,roots,deviation,contiguity_distance,k,distance_metric
-4.496999979019165,euclidean_moi,7800525.95185099,7800525.951850988,2.3878455898079144e-16,1188,1,Optimal,,97.19626168224299,0,0,8322.0,"[56, 26, 40, 27]",50,N/A,4,hop
-3600.298000097275,cut_edges,41.0,36.0,0.12195121951219512,8736,1,Time Limit,,99.84318337743801,0,0,2461024.0,"[56, 26, 40, 27]",50,N/A,4,hop
 6.740999937057495,euclidean_moi,,inf,,1972,0,Infeasible,tree,99.00204449302646,0,0,11227.0,"[56, 26, 40, 27]",50,hop,4,hop
 5.555000066757202,cut_edges,,inf,,9520,0,Infeasible,tree,99.8537474002525,0,0,10704.0,"[56, 26, 40, 27]",50,hop,4,hop
 166.39400005340576,euclidean_moi,8261283.848690969,8261283.848690966,3.3820018474357955e-16,2228,1,Optimal,dist,98.8724924596668,0,0,758217.0,"[56, 26, 40, 27]",50,hop,4,hop
