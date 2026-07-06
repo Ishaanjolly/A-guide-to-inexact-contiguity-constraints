@@ -1,4 +1,4 @@
-time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,roots,districts,grid,deviation
-0.027626991271972656,,0.0,0.0,0.0,348,33,Optimal,dag,93.52678571428571,0,0,"[0, 3, 12, 15]","[[0, 1, 2, 4], [3, 6, 7, 10], [5, 8, 9, 12], [11, 13, 14, 15]]",4x4,0
-0.05049586296081543,,0.0,0.0,0.0,348,597,Optimal,dag,93.52678571428571,0,0,"[0, 3, 12, 15]","[[0, 4, 5, 9], [1, 2, 3, 6, 7], [8, 12, 13], [10, 11, 14, 15]]",4x4,1
-0.12369513511657715,,0.0,0.0,0.0,348,2257,Optimal,dag,93.52678571428571,0,0,"[0, 3, 12, 15]","[[0, 4, 5, 9, 10, 14], [1, 2, 3], [8, 12, 13], [6, 7, 11, 15]]",4x4,2
+time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,roots,grid,deviation
+0.027626991271972656,,0.0,0.0,0.0,348,33,Optimal,dag,93.52678571428571,0,0,"[0, 3, 12, 15]",4x4,0
+0.05049586296081543,,0.0,0.0,0.0,348,597,Optimal,dag,93.52678571428571,0,0,"[0, 3, 12, 15]",4x4,1
+0.12369513511657715,,0.0,0.0,0.0,348,2257,Optimal,dag,93.52678571428571,0,0,"[0, 3, 12, 15]",4x4,2
