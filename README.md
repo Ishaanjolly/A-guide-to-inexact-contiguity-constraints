@@ -42,7 +42,6 @@ python -m ipykernel install --user --name=inexact_contiguity --display-name "Ine
 This project uses [Gurobi](https://www.gurobi.com/) as the default MILP solver. 
 Gurobi offers free academic licences for university-affiliated researchers.
 
-
 ## Citation 
 
 If you use this code in your research, please cite:
