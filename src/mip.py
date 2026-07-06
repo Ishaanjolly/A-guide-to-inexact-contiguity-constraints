@@ -14,7 +14,16 @@ from src.mip_utils import (
     multi_district_cut_callback,
 )
 
-VALID_CONTIGUITY = {None, "tree", "dist", "dag", "shir", "cut", "lcut"}
+VALID_CONTIGUITY = {
+    None,
+    "no_contiguity",
+    "tree",
+    "dist",
+    "dag",
+    "shir",
+    "cut",
+    "lcut",
+}
 VALID_OBJECTIVES = {
     None,
     "cut_edges",
