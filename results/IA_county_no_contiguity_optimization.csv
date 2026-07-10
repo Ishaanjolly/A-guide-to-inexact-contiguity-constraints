@@ -1,3 +1,3 @@
 time_best,objective_type,objective,obj_bound,obj_gap,nonzeros,num_solutions,status,contiguity,sparsity,num_callbacks,num_lazy_cuts,bnb_nodes,roots,deviation,contiguity_distance,k,distance_metric
-0.46900010108947754,euclidean_moi,7800525.95185099,7800525.951850988,2.3878455898079144e-16,1188,1,Optimal,no_contiguity,97.19626168224299,0,0,8322.0,"[56, 26, 40, 27]",50,N/A,4,N/A
-3600.2400000095367,cut_edges,41.0,36.0,0.12195121951219512,8736,1,Time Limit,no_contiguity,99.84318337743801,0,0,2450485.0,"[56, 26, 40, 27]",50,N/A,4,N/A
+0.4570000171661377,euclidean_moi,7800525.95185099,7800525.951850988,2.3878455898079144e-16,1188,1,Optimal,no_contiguity,97.19626168224299,0,0,8322.0,"[56, 26, 40, 27]",50,N/A,4,N/A
+3600.2549998760223,cut_edges,41.0,36.0,0.12195121951219512,8736,1,Time Limit,no_contiguity,99.84318337743801,0,0,2466633.0,"[56, 26, 40, 27]",50,N/A,4,N/A
