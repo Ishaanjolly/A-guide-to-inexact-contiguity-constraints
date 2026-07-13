@@ -251,3 +251,31 @@ def make_grid_graph(nrows, ncols):
         G.nodes[i]["X"] = float(col)
         G.nodes[i]["Y"] = float(row)
     return G
+
+def make_trigrid_graph(nrows, ncols):
+    """
+    Build a grid graph with integer node IDs and unit populations.
+
+    Parameters
+    ----------
+    nrows, ncols : int
+        Grid dimensions.
+
+    Returns
+    -------
+    networkx.Graph
+        Grid graph with ``TOTPOP=1``, ``X``, ``Y`` on each node.
+    """
+    m = nrows-1
+    n = 2 * (ncols-1)
+    G = nx.triangular_lattice_graph(m, n)
+    mapping = dict(zip(G, range(nrows*ncols)))
+    G = nx.relabel_nodes(G, mapping)
+    for i in G.nodes:
+        row, col = divmod(i, ncols)
+        hor_offset = 0.5 if row % 2 else 0
+        vert_scaling = math.sqrt(2)
+        G.nodes[i]["TOTPOP"] = 1
+        G.nodes[i]["X"] = float(col) + hor_offset
+        G.nodes[i]["Y"] = float(row) * vert_scaling
+    return G
