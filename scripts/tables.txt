@@ -1,0 +1,384 @@
+
+============================================================
+  BLOCK
+============================================================
+\begin{table}[ht]
+\caption{Moment of Inertia for Iowa at block level, where $|V|=175199$}
+\label{iowa_moi_block}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 9,832,889.61 & 9,832,889.61 & 517.72 & 1 \\
+  & Distance & 9,832,572.52 & 9,832,572.52 & 302.58 & 2,578 \\
+  & DAG & 9,830,793.94 & 9,830,793.94 & 238.17 & 1 \\ \hline
+ Euclidean & Tree-based & 9,830,591.07 & 9,830,591.07 & 115.95 & 60 \\
+  & Distance & 9,830,591.07 & 9,830,591.07 & 98.19 & 60 \\
+  & DAG & 9,830,589.55 & 9,830,589.55 & 122.65 & 1 \\ \hline
+ HopM & Tree-based & 9,834,331.91 & 9,834,331.91 & 639.08 & 894 \\
+  & Distance & 9,831,324.35 & 9,831,324.35 & 186.89 & 1 \\
+  & DAG & 9,830,663.09 & 9,830,663.09 & 145.86 & 1 \\ \hline
+ EuclideanM & Tree-based & 9,831,084.10 & 9,831,084.10 & 292.51 & 1 \\
+  & Distance & 9,831,084.10 & 9,831,084.10 & 294.68 & 1 \\
+  & DAG & 9,830,633.93 & 9,830,633.93 & 135.77 & 1 \\ \hline
+ N/A & No contiguity & 9,830,589.07 & 9,830,589.07 & 13.18 & 1 \\ \hline
+ N/A & Cut (exact) & – & – & – & – \\
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Cut Edges for Iowa at block level, where $|V|=175199$}
+\label{iowa_cut_edges_block}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & – & – & – & – \\
+  & Distance & – & – & – & – \\
+  & DAG & – & – & – & – \\ \hline
+ Euclidean & Tree-based & – & – & – & – \\
+  & Distance & – & – & – & – \\
+  & DAG & – & – & – & – \\ \hline
+ HopM & Tree-based & – & – & – & – \\
+  & Distance & – & – & – & – \\
+  & DAG & – & – & – & – \\ \hline
+ EuclideanM & Tree-based & – & – & – & – \\
+  & Distance & – & – & – & – \\
+  & DAG & – & – & – & – \\ \hline
+ N/A & No contiguity & 0 & 194,027 & 3,602.68 & 1 \\ \hline
+ N/A & Cut (exact) & – & – & – & – \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  BLOCKGROUP
+============================================================
+\begin{table}[ht]
+\caption{Moment of Inertia for Iowa at blockgroup level, where $|V|=2703$}
+\label{iowa_moi_blockgroup}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 9,215,940.85 & 9,215,940.85 & 2.67 & 868 \\
+  & Distance & 9,212,369.80 & 9,212,369.80 & 2.10 & 2,143 \\
+  & DAG & 9,208,701.17 & 9,208,701.17 & 1.55 & 9,146 \\ \hline
+ Euclidean & Tree-based & 9,208,107.36 & 9,208,107.36 & 2.92 & 7,715 \\
+  & Distance & 9,208,107.36 & 9,208,107.36 & 3.38 & 7,715 \\
+  & DAG & 9,207,731.09 & 9,207,731.09 & 1.28 & 2,646 \\ \hline
+ HopM & Tree-based & 9,213,193.68 & 9,213,193.68 & 3.33 & 10,204 \\
+  & Distance & 9,211,792.15 & 9,211,792.15 & 2.37 & 453 \\
+  & DAG & 9,208,758.48 & 9,208,758.48 & 1.41 & 3,338 \\ \hline
+ EuclideanM & Tree-based & 9,211,235.17 & 9,211,235.17 & 3.17 & 1,408 \\
+  & Distance & 9,211,235.17 & 9,211,235.17 & 3.30 & 1,408 \\
+  & DAG & 9,208,137.78 & 9,208,137.78 & 1.79 & 5,148 \\ \hline
+ N/A & No contiguity & 9,207,594.82 & 9,207,594.82 & 0.27 & 4,434 \\ \hline
+ N/A & Cut (exact) & 9,207,687.36 & 9,207,687.36 & 3.82 & 6,300 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Cut Edges for Iowa at blockgroup level, where $|V|=2703$}
+\label{iowa_cut_edges_blockgroup}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 133 & 133 & 296.73 & 2,419 \\
+  & Distance & 123 & 123 & 1,463.67 & 4,499 \\
+  & DAG & 47 & 169 & 3,600.40 & 588 \\ \hline
+ Euclidean & Tree-based & 120 & 120 & 1,360.65 & 8,938 \\
+  & Distance & 120 & 120 & 1,369.45 & 8,938 \\
+  & DAG & – & – & – & – \\ \hline
+ HopM & Tree-based & 129 & 129 & 463.75 & 7,253 \\
+  & Distance & 127 & 127 & 1,122.62 & 12,289 \\
+  & DAG & – & – & – & – \\ \hline
+ EuclideanM & Tree-based & 127 & 127 & 736.90 & 2,863 \\
+  & Distance & 127 & 127 & 763.08 & 2,863 \\
+  & DAG & – & – & – & – \\ \hline
+ N/A & No contiguity & 19 & 135 & 3,600.40 & 1,785 \\ \hline
+ N/A & Cut (exact) & – & – & – & – \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  COUNTY
+============================================================
+\begin{table}[ht]
+\caption{Moment of Inertia for Iowa at county level, where $|V|=99$}
+\label{iowa_moi_county}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & – & – & – & – \\
+  & Distance & 8,261,283.85 & 8,261,283.85 & 137.89 & 758,217 \\
+  & DAG & 8,004,829.45 & 8,004,829.45 & 28.55 & 97,724 \\ \hline
+ Euclidean & Tree-based & – & – & – & – \\
+  & Distance & – & – & – & – \\
+  & DAG & 7,972,386.64 & 7,972,386.64 & 39.77 & 255,396 \\ \hline
+ N/A & No contiguity & 7,800,525.95 & 7,800,525.95 & 0.46 & 8,322 \\ \hline
+ N/A & Cut (exact) & 7,963,865.85 & 7,963,865.85 & 1,134.91 & 6,212,588 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Cut Edges for Iowa at county level, where $|V|=99$}
+\label{iowa_cut_edges_county}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & – & – & – & – \\
+  & Distance & 51 & 51 & 730.98 & 1,388,643 \\
+  & DAG & 44.00 & 44.00 & 2,204.67 & 1,390,955 \\ \hline
+ Euclidean & Tree-based & – & – & – & – \\
+  & Distance & – & – & – & – \\
+  & DAG & 40 & 51 & 3,600.72 & 1,943,598 \\ \hline
+ N/A & No contiguity & 36 & 41 & 3,600.25 & 2,466,633 \\ \hline
+ N/A & Cut (exact) & – & – & – & – \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  TRACT
+============================================================
+\begin{table}[ht]
+\caption{Moment of Inertia for Iowa at tract level, where $|V|=896$}
+\label{iowa_moi_tract}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 8,736,166.53 & 8,736,166.53 & 1.37 & 129 \\
+  & Distance & 8,709,519.31 & 8,709,519.31 & 2.75 & 3,484 \\
+  & DAG & 8,691,192.23 & 8,691,192.23 & 1.00 & 1 \\ \hline
+ Euclidean & Tree-based & 8,691,942.89 & 8,691,942.89 & 1.67 & 427 \\
+  & Distance & 8,691,942.89 & 8,691,942.89 & 1.77 & 427 \\
+  & DAG & 8,688,246.76 & 8,688,246.76 & 2.41 & 418 \\ \hline
+ HopM & Tree-based & 8,759,756.23 & 8,759,756.23 & 1.06 & 1 \\
+  & Distance & 8,709,519.31 & 8,709,519.31 & 1.56 & 283 \\
+  & DAG & 8,697,559.98 & 8,697,559.98 & 2.83 & 710 \\ \hline
+ EuclideanM & Tree-based & 8,730,579.31 & 8,730,579.31 & 4.39 & 2,087 \\
+  & Distance & 8,730,579.31 & 8,730,579.31 & 3.92 & 2,087 \\
+  & DAG & 8,689,628.13 & 8,689,628.13 & 2.56 & 1,162 \\ \hline
+ N/A & No contiguity & 8,687,908.68 & 8,687,908.68 & 0.33 & 1,640 \\ \hline
+ N/A & Cut (exact) & 8,688,180.30 & 8,688,180.30 & 0.88 & 1,450 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Cut Edges for Iowa at tract level, where $|V|=896$}
+\label{iowa_cut_edges_tract}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 82 & 82 & 194.85 & 59,789 \\
+  & Distance & 79 & 79 & 316.62 & 16,215 \\
+  & DAG & 77 & 82 & 3,600.61 & 90,555 \\ \hline
+ Euclidean & Tree-based & 85 & 85 & 1,933.41 & 266,570 \\
+  & Distance & 85 & 85 & 1,947.83 & 266,570 \\
+  & DAG & 40 & 86 & 3,600.82 & 10,358 \\ \hline
+ HopM & Tree-based & 81 & 81 & 102.33 & 8,070 \\
+  & Distance & 81 & 81 & 1,961.83 & 273,811 \\
+  & DAG & 54 & 82 & 3,600.72 & 13,144 \\ \hline
+ EuclideanM & Tree-based & 82 & 82 & 444.81 & 57,889 \\
+  & Distance & 82 & 82 & 399.39 & 57,889 \\
+  & DAG & 48 & 82 & 3,600.84 & 10,601 \\ \hline
+ N/A & No contiguity & 42 & 87 & 3,600.34 & 20,217 \\ \hline
+ N/A & Cut (exact) & – & – & – & – \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  VTD
+============================================================
+\begin{table}[ht]
+\caption{Moment of Inertia for Iowa at vtd level, where $|V|=2536$}
+\label{iowa_moi_vtd}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 9,297,763.94 & 9,297,763.94 & 2.56 & 234 \\
+  & Distance & 9,272,390.74 & 9,272,390.74 & 1.98 & 3,978 \\
+  & DAG & 9,267,450.20 & 9,267,450.20 & 2.47 & 12,368 \\ \hline
+ Euclidean & Tree-based & 9,267,021.49 & 9,267,021.49 & 2.45 & 675 \\
+  & Distance & 9,267,021.49 & 9,267,021.49 & 2.47 & 675 \\
+  & DAG & 9,266,932.49 & 9,266,932.49 & 1.15 & 5,387 \\ \hline
+ HopM & Tree-based & 9,273,516.58 & 9,273,516.58 & 2.61 & 3,946 \\
+  & Distance & 9,271,234.16 & 9,271,234.16 & 1.26 & 239 \\
+  & DAG & 9,267,711.09 & 9,267,711.09 & 1.39 & 7,479 \\ \hline
+ EuclideanM & Tree-based & 9,272,880.44 & 9,272,880.44 & 2.42 & 226 \\
+  & Distance & 9,272,880.44 & 9,272,880.44 & 2.31 & 226 \\
+  & DAG & 9,267,711.09 & 9,267,711.09 & 1.10 & 5,391 \\ \hline
+ N/A & No contiguity & 9,266,904.94 & 9,266,904.94 & 0.21 & 955 \\ \hline
+ N/A & Cut (exact) & 9,266,931.76 & 9,266,931.76 & 5.54 & 4,489 \\
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Cut Edges for Iowa at vtd level, where $|V|=2536$}
+\label{iowa_cut_edges_vtd}
+\centering
+\small
+\begin{tabular}{l|l|rrrr} 
+Scheme & Model & LB & UB & Time & Nodes \\\hline
+ Hop & Tree-based & 113 & 113 & 1,507.51 & 9,540 \\
+  & Distance & 94 & 113 & 3,600.62 & 4,255 \\
+  & DAG & – & – & – & – \\ \hline
+ Euclidean & Tree-based & 114 & 114 & 833.56 & 1,372 \\
+  & Distance & 114 & 114 & 838.54 & 1,372 \\
+  & DAG & – & – & – & – \\ \hline
+ HopM & Tree-based & 113 & 113 & 644.44 & 2,072 \\
+  & Distance & 92 & 113 & 3,600.73 & 1,313 \\
+  & DAG & – & – & – & – \\ \hline
+ EuclideanM & Tree-based & 113 & 113 & 830.40 & 520 \\
+  & Distance & 113 & 113 & 833.32 & 520 \\
+  & DAG & – & – & – & – \\ \hline
+ N/A & No contiguity & 14 & 129 & 3,600.54 & 1,820 \\ \hline
+ N/A & Cut (exact) & – & – & – & – \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  ENUMERATION: IA_county_enumeration.csv
+============================================================
+\begin{table}[ht]
+\caption{Enumeration results for Iowa at county level, where $|V|=99$}
+\label{enumeration_iowa_county}
+\centering
+\small
+\begin{tabular}{r|l|l|rrl}
+Deviation & Scheme & Model & Solutions & Time (s) & Status \\\hline
+ 0 & Euclidean & DAG & 0 & 0.01 & Infeasible \\
+ 0 & Euclidean & Distance & 0 & 0.00 & Infeasible \\
+ 0 & Euclidean & Tree-based & 0 & 0.01 & Infeasible \\
+ 10 & Euclidean & DAG & 138 & 3,600.03 & Time Limit \\
+ 10 & Euclidean & Distance & 0 & 0.29 & Infeasible \\
+ 10 & Euclidean & Tree-based & 0 & 0.25 & Infeasible \\
+ 20 & Euclidean & DAG & 1,110 & 3,600.05 & Time Limit \\
+ 20 & Euclidean & Distance & 0 & 0.38 & Infeasible \\
+ 20 & Euclidean & Tree-based & 0 & 0.35 & Infeasible \\
+ 30 & Euclidean & DAG & 2,282 & 3,600.04 & Time Limit \\
+ 30 & Euclidean & Distance & 0 & 0.35 & Infeasible \\
+ 30 & Euclidean & Tree-based & 0 & 0.32 & Infeasible \\
+ 40 & Euclidean & DAG & 3,290 & 3,600.04 & Time Limit \\
+ 40 & Euclidean & Distance & 0 & 0.62 & Infeasible \\
+ 40 & Euclidean & Tree-based & 0 & 0.40 & Infeasible \\
+ 50 & Euclidean & DAG & 12,353 & 3,600.03 & Time Limit \\
+ 50 & Euclidean & Distance & 0 & 0.64 & Infeasible \\
+ 50 & Euclidean & Tree-based & 0 & 0.47 & Infeasible \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  ENUMERATION: small_4x4_enumeration.csv
+============================================================
+\begin{table}[ht]
+\caption{Enumeration results for the 4x4 grid, where $|V|=16$}
+\label{enumeration_grid_4x4}
+\centering
+\small
+\begin{tabular}{r|l|l|rrl}
+Deviation & Scheme & Model & Solutions & Time (s) & Status \\\hline
+ 0 & N/A & Cut (exact) & 33 & 0.07 & Optimal \\
+ 0 & N/A & DAG & 33 & 0.02 & Optimal \\
+ 0 & N/A & Distance & 33 & 0.02 & Optimal \\
+ 0 & N/A & Tree-based & 7 & 0.03 & Optimal \\
+ 1 & N/A & Cut (exact) & 597 & 0.17 & Optimal \\
+ 1 & N/A & DAG & 597 & 0.03 & Optimal \\
+ 1 & N/A & Distance & 597 & 0.03 & Optimal \\
+ 1 & N/A & Tree-based & 91 & 0.02 & Optimal \\
+ 2 & N/A & Cut (exact) & 2,297 & 0.71 & Optimal \\
+ 2 & N/A & DAG & 2,257 & 0.08 & Optimal \\
+ 2 & N/A & Distance & 2,257 & 0.06 & Optimal \\
+ 2 & N/A & Tree-based & 329 & 0.02 & Optimal \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  ENUMERATION: small_4x4_tri_enumeration.csv
+============================================================
+\begin{table}[ht]
+\caption{Enumeration results for the 4x4 grid, where $|V|=16$}
+\label{enumeration_grid_4x4}
+\centering
+\small
+\begin{tabular}{r|l|l|rrl}
+Deviation & Scheme & Model & Solutions & Time (s) & Status \\\hline
+ 0 & N/A & Cut (exact) & 71 & 0.08 & Optimal \\
+ 0 & N/A & DAG & 65 & 0.03 & Optimal \\
+ 0 & N/A & Distance & 61 & 0.03 & Optimal \\
+ 0 & N/A & Tree-based & 20 & 0.02 & Optimal \\
+ 1 & N/A & Cut (exact) & 1,267 & 0.46 & Optimal \\
+ 1 & N/A & DAG & 1,137 & 0.04 & Optimal \\
+ 1 & N/A & Distance & 1,021 & 0.04 & Optimal \\
+ 1 & N/A & Tree-based & 349 & 0.03 & Optimal \\
+ 2 & N/A & Cut (exact) & 4,832 & 1.59 & Optimal \\
+ 2 & N/A & DAG & 4,208 & 0.15 & Optimal \\
+ 2 & N/A & Distance & 3,638 & 0.12 & Optimal \\
+ 2 & N/A & Tree-based & 1,285 & 0.05 & Optimal \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  ENUMERATION: small_6x6_enumeration.csv
+============================================================
+\begin{table}[ht]
+\caption{Enumeration results for the 6x6 grid, where $|V|=36$}
+\label{enumeration_grid_6x6}
+\centering
+\small
+\begin{tabular}{r|l|l|rrl}
+Deviation & Scheme & Model & Solutions & Time (s) & Status \\\hline
+ 0 & N/A & Cut (exact) & 82,419 & 185.75 & Optimal \\
+ 0 & N/A & DAG & 45,017 & 11.47 & Optimal \\
+ 0 & N/A & Distance & 45,017 & 11.05 & Optimal \\
+ 0 & N/A & Tree-based & 218 & 0.04 & Optimal \\
+ 1 & N/A & Cut (exact) & 645,722 & 3,650.74 & Time Limit \\
+ 1 & N/A & DAG & 734,082 & 3,708.24 & Time Limit \\
+ 1 & N/A & Distance & 738,627 & 3,607.43 & Time Limit \\
+ 1 & N/A & Tree-based & 3,050 & 0.13 & Optimal \\
+ 2 & N/A & Cut (exact) & 646,813 & 3,601.80 & Time Limit \\
+ 2 & N/A & DAG & 733,206 & 3,612.13 & Time Limit \\
+ 2 & N/A & Distance & 748,518 & 3,730.68 & Time Limit \\
+ 2 & N/A & Tree-based & 11,449 & 0.71 & Optimal \\
+\end{tabular}
+\end{table}
+
+
+============================================================
+  ENUMERATION: small_6x6_tri_enumeration.csv
+============================================================
+\begin{table}[ht]
+\caption{Enumeration results for the 6x6 grid, where $|V|=36$}
+\label{enumeration_grid_6x6}
+\centering
+\small
+\begin{tabular}{r|l|l|rrl}
+Deviation & Scheme & Model & Solutions & Time (s) & Status \\\hline
+ 0 & N/A & Cut (exact) & 452,196 & 3,511.83 & Optimal \\
+ 0 & N/A & DAG & 152,746 & 113.57 & Optimal \\
+ 0 & N/A & Distance & 55,654 & 15.76 & Optimal \\
+ 0 & N/A & Tree-based & 1,077 & 0.07 & Optimal \\
+ 1 & N/A & Cut (exact) & 632,164 & 3,618.98 & Time Limit \\
+ 1 & N/A & DAG & 745,408 & 3,689.79 & Time Limit \\
+ 1 & N/A & Distance & 750,475 & 3,671.30 & Time Limit \\
+ 1 & N/A & Tree-based & 19,602 & 1.60 & Optimal \\
+ 2 & N/A & Cut (exact) & 641,874 & 3,660.13 & Time Limit \\
+ 2 & N/A & DAG & 749,522 & 3,636.90 & Time Limit \\
+ 2 & N/A & Distance & 759,662 & 3,749.65 & Time Limit \\
+ 2 & N/A & Tree-based & 89,499 & 33.42 & Optimal \\
+\end{tabular}
+\end{table}
+
