@@ -412,6 +412,21 @@ def generate_optimization_table(level: str) -> str | None:
 
     distances = ordered_distances(rows)
     models = available_models(rows)
+    scheme_models = [model for model in models if model not in {"no_contiguity", "cut"}]
+    independent_models = [
+        model
+        for model in ("no_contiguity", "cut")
+        if any(
+            find_optimization_row(
+                rows,
+                distance="N/A",
+                model=model,
+                objective=objective,
+            )
+            is not None
+            for objective in OBJECTIVE_ORDER
+        )
+    ]
     column_spec = "l|l|" + "|".join("rrr" for _ in OBJECTIVE_ORDER)
     span_headers = " & ".join(
         rf"\multicolumn{{3}}{{c{'|' if i < len(OBJECTIVE_ORDER) - 1 else ''}}}{{{OBJECTIVE_DISPLAY[obj]}}}"
@@ -432,10 +447,11 @@ def generate_optimization_table(level: str) -> str | None:
         rf"Scheme & Model & {metric_headers}\\\hline",
     ]
 
-    for distance_index, distance in enumerate(distances):
+    distance_groups: list[tuple[str, list[str]]] = []
+    for distance in distances:
         included_models = [
             model
-            for model in models
+            for model in scheme_models
             if any(
                 find_optimization_row(
                     rows,
@@ -447,8 +463,10 @@ def generate_optimization_table(level: str) -> str | None:
                 for objective in OBJECTIVE_ORDER
             )
         ]
-        if not included_models:
-            continue
+        if included_models:
+            distance_groups.append((distance, included_models))
+
+    for distance_index, (distance, included_models) in enumerate(distance_groups):
         for model_index, model in enumerate(included_models):
             scheme = latex_escape(distance) if model_index == 0 else ""
             model_label = CONTIGUITY_DISPLAY.get(model, model)
@@ -464,13 +482,31 @@ def generate_optimization_table(level: str) -> str | None:
                 )
             line_end = r" \\"
             if (
-                distance_index < len(distances) - 1
-                and model_index == len(included_models) - 1
-            ):
+                distance_index < len(distance_groups) - 1 or independent_models
+            ) and model_index == len(included_models) - 1:
                 line_end = r" \\ \hline"
             lines.append(
                 f"{scheme} & {latex_escape(model_label)} & {' & '.join(cells)}{line_end}"
             )
+
+    for model_index, model in enumerate(independent_models):
+        model_label = CONTIGUITY_DISPLAY.get(model, model)
+        cells = []
+        for objective in OBJECTIVE_ORDER:
+            cells.extend(
+                optimization_cells(
+                    rows,
+                    distance="N/A",
+                    model=model,
+                    objective=objective,
+                )
+            )
+        line_end = r" \\"
+        if model_index < len(independent_models) - 1:
+            line_end = r" \\ \hline"
+        lines.append(
+            f"N/A & {latex_escape(model_label)} & {' & '.join(cells)}{line_end}"
+        )
 
     lines.extend([r"\end{tabular}", r"\end{table}"])
     return "\n".join(lines)
