@@ -22,19 +22,15 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 RESULTS_DIR = ROOT / "results"
 
-LEVELS = ("block", "blockgroup", "county", "tract", "vtd")
+LEVELS = ("county", "block", "vtd")
 LEVEL_DISPLAY = {
     "block": "block",
-    "blockgroup": "block-group",
     "county": "county",
-    "tract": "tract",
     "vtd": "precinct",
 }
 LEVEL_LABEL = {
     "block": "block",
-    "blockgroup": "blockgroup",
     "county": "county",
-    "tract": "tract",
     "vtd": "precinct",
 }
 
@@ -131,7 +127,9 @@ def format_number(value: float | None, *, decimals: int | None = None) -> str:
         return MISSING
     if decimals is not None:
         return f"{value:,.{decimals}f}"
-    if abs(value - round(value)) < 1e-6:
+    # Solver objectives that are mathematically integral can carry small
+    # floating-point noise (for example, 44.000043).
+    if abs(value - round(value)) < 1e-4:
         return f"{round(value):,}"
     return f"{value:,.2f}"
 
@@ -264,7 +262,7 @@ def objective_from_row(row: dict[str, str]) -> str | None:
 
 def optimization_values(
     row: dict[str, str],
-) -> tuple[float | None, float | None, float | None, float | None]:
+) -> tuple[float | None, float | None, float | None, float | None, str]:
     lb = first_number(
         row,
         (
@@ -312,7 +310,7 @@ def optimization_values(
             "branch_bound_nodes",
         ),
     )
-    return lb, ub, time_s, nodes
+    return lb, ub, time_s, nodes, first_value(row, ("status",)) or ""
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -370,7 +368,7 @@ def find_optimization_row(
     distance: str,
     model: str,
     objective: str,
-) -> tuple[float | None, float | None, float | None, float | None] | None:
+) -> tuple[float | None, float | None, float | None, float | None, str] | None:
     for row in rows:
         if (
             row.get("distance") == distance
@@ -401,8 +399,20 @@ def optimization_cells(
     )
     if values is None:
         return [MISSING, MISSING, MISSING]
-    lb, ub, time_s, nodes = values
-    return [format_obj_interval(lb, ub), format_time(time_s), format_number(nodes)]
+    lb, ub, time_s, nodes, status = values
+    if status.lower() == "infeasible":
+        objective = r"$+\infty$"
+    elif status.lower() == "time limit" and ub is None:
+        objective = f"[{format_number(lb)},$+\infty$]"
+    else:
+        objective = format_obj_interval(lb, ub)
+    time = "TL" if status.lower() == "time limit" else format_time(time_s)
+    return [objective, time, format_number(nodes)]
+
+
+def optimization_contiguity_label(model: str) -> str:
+    """Return the compact contiguity labels used in optimization tables."""
+    return {"no_contiguity": "none", "cut": "exact"}.get(model, model)
 
 
 def generate_optimization_table(level: str) -> str | None:
@@ -432,19 +442,19 @@ def generate_optimization_table(level: str) -> str | None:
         rf"\multicolumn{{3}}{{c{'|' if i < len(OBJECTIVE_ORDER) - 1 else ''}}}{{{OBJECTIVE_DISPLAY[obj]}}}"
         for i, obj in enumerate(OBJECTIVE_ORDER)
     )
-    metric_headers = " & ".join("OBJ & Time (s) & Nodes" for _ in OBJECTIVE_ORDER)
     display = LEVEL_DISPLAY.get(level, level)
     label = LEVEL_LABEL.get(level, level)
     node_count = get_node_count(level)
 
     lines = [
-        r"\begin{table}[H]",
-        rf"\caption{{Compactness objectives for Iowa at {display}-level{caption_node_count(node_count)}}}",
+        r"\begin{table}[ht]",
+        rf"\caption{{Optimization Results for Iowa at {display.title()}-Level{caption_node_count(node_count)}}}",
         rf"\label{{iowa_optimization_{label}}}",
         r"\centering",
+        r"\resizebox{\textwidth}{!}{%",
         rf"\begin{{tabular}}{{{column_spec}}}",
         rf"& & {span_headers}\\",
-        rf"Scheme & Model & {metric_headers}\\\hline",
+        r"Scheme & Contiguity & Objective & Time(s) & \#BB & Objective & Time(s) & \#BB\\\hline",
     ]
 
     distance_groups: list[tuple[str, list[str]]] = []
@@ -469,7 +479,7 @@ def generate_optimization_table(level: str) -> str | None:
     for distance_index, (distance, included_models) in enumerate(distance_groups):
         for model_index, model in enumerate(included_models):
             scheme = latex_escape(distance) if model_index == 0 else ""
-            model_label = CONTIGUITY_DISPLAY.get(model, model)
+            model_label = optimization_contiguity_label(model)
             cells: list[str] = []
             for objective in OBJECTIVE_ORDER:
                 cells.extend(
@@ -490,7 +500,7 @@ def generate_optimization_table(level: str) -> str | None:
             )
 
     for model_index, model in enumerate(independent_models):
-        model_label = CONTIGUITY_DISPLAY.get(model, model)
+        model_label = optimization_contiguity_label(model)
         cells = []
         for objective in OBJECTIVE_ORDER:
             cells.extend(
@@ -502,13 +512,11 @@ def generate_optimization_table(level: str) -> str | None:
                 )
             )
         line_end = r" \\"
-        if model_index < len(independent_models) - 1:
-            line_end = r" \\ \hline"
         lines.append(
-            f"N/A & {latex_escape(model_label)} & {' & '.join(cells)}{line_end}"
+            f"{'N/A' if model_index == 0 else ''} & {latex_escape(model_label)} & {' & '.join(cells)}{line_end}"
         )
 
-    lines.extend([r"\end{tabular}", r"\end{table}"])
+    lines.extend([r"\end{tabular}", r"} % end resizing", r"\end{table}"])
     return "\n".join(lines)
 
 
